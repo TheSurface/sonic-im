@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import base64
 from datetime import datetime
+import math
 
 
 st.set_page_config(page_title='Keeps File Processor',layout='wide')
@@ -50,22 +51,37 @@ if (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (upl
     daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
     daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
 
+    next_drop_dt_list = []
+
+    for show in daily_budget_df['Show Name'].unique():
+        temp_list = []
+        drop_series = daily_budget_df[daily_budget_df['Show Name'] == show]['Actual Drop Day'].reset_index()
+        
+        shifted_drop_series = drop_series.shift(-1)
+        index_list = shifted_drop_series.index.values
+        
+        for item in index_list:
+            if math.isnan(shifted_drop_series['index'][item]):
+                temp_list.append(drop_series['Actual Drop Day'][item])
+            else:
+                temp_list.append(shifted_drop_series['Actual Drop Day'][item])
+        
+        for item in temp_list:
+            next_drop_dt_list.append(item)
+
+    daily_budget_df['next_drop_date'] = pd.Series(next_drop_dt_list)
+
 
     # Create final DataFrames to export for Tableau data sources
     purchases_df = pd.merge(daily_budget_df,looker_purchases_agg_df,left_on=['UTM'],right_on=['Utm Campaign'],how='left')
     leads_df = pd.merge(daily_budget_df,looker_leads_agg_df,left_on=['UTM'],right_on=['Utm Campaign'],how='left')
 
 
-    # Create Date Diff field to attribute orders to the appropriate drop window
-    purchases_df['date_diff'] = purchases_df['User\'s First Non-refunded Purchase Date'] - purchases_df['Actual Drop Day']
-    leads_df['date_diff'] = leads_df['Lead Created Date'] - leads_df['Actual Drop Day']
-
-
     # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or orders
-    final_purchases_df = purchases_df[(purchases_df['date_diff'] >= '0 days') | ((purchases_df['orders'].isnull()) & (purchases_df['Actual Drop Day'] <= datetime.today()))]
+    final_purchases_df = purchases_df[((purchases_df["User's First Non-refunded Purchase Date"] >= purchases_df['Actual Drop Day']) & (purchases_df["User's First Non-refunded Purchase Date"] < purchases_df['next_drop_date'])) | ((purchases_df['orders'].isnull()) & (purchases_df['Actual Drop Day'] <= datetime.today())) | ((purchases_df['Actual Drop Day'] == purchases_df['next_drop_date']) & (purchases_df["User's First Non-refunded Purchase Date"] >= purchases_df['Actual Drop Day']))]
     final_purchases_df.fillna(value={'orders':0},inplace=True)
 
-    final_leads_df = leads_df[(leads_df['date_diff'] >= '0 days') | ((leads_df['leads'].isnull()) & (leads_df['Actual Drop Day'] <= datetime.today()))]
+    final_leads_df = leads_df[((leads_df['Lead Created Date'] >= leads_df['Actual Drop Day']) & (leads_df['Lead Created Date'] < leads_df['next_drop_date'])) | ((leads_df['leads'].isnull()) & (leads_df['Actual Drop Day'] <= datetime.today())) | ((leads_df['Actual Drop Day'] == leads_df['next_drop_date']) & (leads_df['Lead Created Date'] >= leads_df['Actual Drop Day']))]
     final_leads_df.fillna(value={'leads':0},inplace=True)
 
     
