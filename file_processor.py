@@ -52,11 +52,12 @@ if (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (upl
     daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
     daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
 
-    next_drop_dt_list = []
+    rebuilt_budget_df = pd.DataFrame()
 
     for show in daily_budget_df['Show Name'].unique():
         temp_list = []
-        drop_series = daily_budget_df[daily_budget_df['Show Name'] == show]['Actual Drop Day'].reset_index()
+        temp_df = daily_budget_df[daily_budget_df['Show Name'] == show]
+        drop_series = temp_df['Actual Drop Day'].reset_index()
         
         shifted_drop_series = drop_series.shift(-1)
         index_list = shifted_drop_series.index.values
@@ -67,15 +68,16 @@ if (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (upl
             else:
                 temp_list.append(shifted_drop_series['Actual Drop Day'][item])
         
-        for item in temp_list:
-            next_drop_dt_list.append(item)
-
-    daily_budget_df['next_drop_date'] = pd.Series(next_drop_dt_list)
+        temp_df.reset_index(inplace=True)
+        temp_df['next_drop_date'] = pd.Series(temp_list)
+        temp_df.drop(['index'],axis=1)
+        
+        rebuilt_budget_df = pd.concat([rebuilt_budget_df,temp_df],axis=0)
 
 
     # Create final DataFrames to export for Tableau data sources
-    purchases_df = pd.merge(daily_budget_df,looker_purchases_agg_df,left_on=['UTM'],right_on=['Utm Campaign'],how='left')
-    leads_df = pd.merge(daily_budget_df,looker_leads_agg_df,left_on=['UTM'],right_on=['Utm Campaign'],how='left')
+    purchases_df = pd.merge(rebuilt_budget_df,looker_purchases_agg_df,left_on=['UTM'],right_on=['Utm Campaign'],how='left')
+    leads_df = pd.merge(rebuilt_budget_df,looker_leads_agg_df,left_on=['UTM'],right_on=['Utm Campaign'],how='left')
 
 
     # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or orders
