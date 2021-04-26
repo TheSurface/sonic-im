@@ -30,6 +30,7 @@ if (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (upl
     looker_file_purchases_df = pd.read_csv(uploaded_purchases,parse_dates=["User's First Non-refunded Purchase Date","Lead Created Date"])
     looker_file_leads_df = pd.read_csv(uploaded_leads,parse_dates=['Lead Created Date'])
     daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+    daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
 
 
     # Drop unused columns
