@@ -85,10 +85,10 @@ if (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (upl
 
 
     # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or orders
-    final_purchases_df = purchases_df[((purchases_df['Actual Drop Day'] <= datetime.today()) | ((purchases_df['orders'].isnull()) & (purchases_df['Actual Drop Day'] <= datetime.today())) | ((purchases_df['Actual Drop Day'] == purchases_df['next_drop_date']) & (purchases_df["User's First Non-refunded Purchase Date"] >= purchases_df['Actual Drop Day']))]
+    final_purchases_df = purchases_df[(purchases_df['Actual Drop Day'] <= datetime.today()) | ((purchases_df['orders'].isnull()) & (purchases_df['Actual Drop Day'] <= datetime.today())) | ((purchases_df['Actual Drop Day'] == purchases_df['next_drop_date']) & (purchases_df["User's First Non-refunded Purchase Date"] >= purchases_df['Actual Drop Day']))]
     final_purchases_df.fillna(value={'orders':0},inplace=True)
 
-    final_leads_df = leads_df[((leads_df['Actual Drop Day'] <= datetime.today()) | ((leads_df['leads'].isnull()) & (leads_df['Actual Drop Day'] <= datetime.today())) | ((leads_df['Actual Drop Day'] == leads_df['next_drop_date']) & (leads_df['Lead Created Date'] >= leads_df['Actual Drop Day']))]
+    final_leads_df = leads_df[(leads_df['Actual Drop Day'] <= datetime.today()) | ((leads_df['leads'].isnull()) & (leads_df['Actual Drop Day'] <= datetime.today())) | ((leads_df['Actual Drop Day'] == leads_df['next_drop_date']) & (leads_df['Lead Created Date'] >= leads_df['Actual Drop Day']))]
     final_leads_df.fillna(value={'leads':0},inplace=True)
 
     
