@@ -18,7 +18,7 @@ st.write('')
 # Function to eliminate unnecessary rows after joining the budget to the lead, order, and chartable data sources
 def reduce_df(df):
     
-    crit_1 = df['Actual Drop Day'] < datetime.today().date()
+    crit_1 = df['Actual Drop Day'] < datetime.date(2021,5,3) #datetime.today().date()
     crit_2 = (df['event_date'] >= df['Actual Drop Day']) & (df['event_date'] < df['next_drop_date'])
     crit_3 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] >= df['Actual Drop Day'])
     
