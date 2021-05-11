@@ -184,7 +184,7 @@ if (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (upl
 elif (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (uploaded_purchases is not None) and (uploaded_chartable_data is not None):
 
     ## Chartable Processing ##
-    chartable_df['show_name'] = chartable_df['ad_campaign_name'].apply(lambda x: x.split(' - ')[0])
+    chartable_df['show_name'] = chartable_df['ad_campaign_placement_name'].apply(lambda x: x.split(' - ')[0])
     chartable_df['event_date'] = chartable_df['event_timestamp'].apply(lambda x: x.date())
 
     chartable_df = chartable_df[(chartable_df['event_type'] == 'lead') | (chartable_df['event_type'] == 'purchase')].groupby(['event_date','show_name','event_type']).event_id.nunique().reset_index()
