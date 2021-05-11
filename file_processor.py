@@ -85,7 +85,7 @@ elif (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (u
     looker_file_purchases_df = pd.read_csv(uploaded_purchases,parse_dates=["User's First Non-refunded Purchase Date","Lead Created Date"])
     looker_file_leads_df = pd.read_csv(uploaded_leads,parse_dates=['Lead Created Date'])
     daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
-    chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['event_timestamp'], skiprows=1, skipfooter=1)
+    chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['event_timestamp'])
 
 
 
