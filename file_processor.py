@@ -187,7 +187,7 @@ elif (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (u
     chartable_df['show_name'] = chartable_df['ad_campaign_name'].apply(lambda x: x.split(' - ')[0])
     chartable_df['event_date'] = chartable_df['event_timestamp'].apply(lambda x: x.date())
 
-    chartable_df = chartable_df[(chartable_df['event_type'] == 'lead') | (chartable_df['event_type'] == 'purchase')].groupby(['event_date','show_name','event_type']).count()['event_id'].reset_index()
+    chartable_df = chartable_df[(chartable_df['event_type'] == 'lead') | (chartable_df['event_type'] == 'purchase')].groupby(['event_date','show_name','event_type']).event_id.nunique().reset_index()
     chartable_df.rename({'event_id':'count'},axis=1,inplace=True)
     chartable_df['source'] = 'Chartable'
 
