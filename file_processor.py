@@ -85,7 +85,7 @@ elif (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (u
     looker_file_purchases_df = pd.read_csv(uploaded_purchases,parse_dates=["User's First Non-refunded Purchase Date","Lead Created Date"])
     looker_file_leads_df = pd.read_csv(uploaded_leads,parse_dates=['Lead Created Date'])
     daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
-    chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['event_timestamp'])
+    chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
 
 
@@ -185,7 +185,7 @@ elif (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (u
 
     ## Chartable Processing ##
     chartable_df['show_name'] = chartable_df['Campaign'].apply(lambda x: x.split(' - ')[0])
-    chartable_df['event_date'] = chartable_df['Date'].apply(lambda x: x.date())
+    chartable_df['event_date'] = chartable_df['Date']
 
     chartable_lead_df = chartable_df.groupby(['event_date','show_name']).sum()['Estimated lead'].reset_index().rename({'Estimated lead':'count'},axis=1)
     chartable_lead_df['event_type'] = 'lead'
