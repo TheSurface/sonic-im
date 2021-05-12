@@ -184,11 +184,16 @@ if (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (upl
 elif (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (uploaded_purchases is not None) and (uploaded_chartable_data is not None):
 
     ## Chartable Processing ##
-    chartable_df['show_name'] = chartable_df['ad_campaign_placement_name'].apply(lambda x: x.split(' - ')[0])
-    chartable_df['event_date'] = chartable_df['event_timestamp'].apply(lambda x: x.date())
+    chartable_df['show_name'] = chartable_df['Campaign'].apply(lambda x: x.split(' - ')[0])
+    chartable_df['event_date'] = chartable_df['Date'].apply(lambda x: x.date())
 
-    chartable_df = chartable_df[(chartable_df['event_type'] == 'lead') | (chartable_df['event_type'] == 'purchase')].groupby(['event_date','show_name','event_type']).event_id.nunique().reset_index()
-    chartable_df.rename({'event_id':'count'},axis=1,inplace=True)
+    chartable_lead_df = chartable_df.groupby(['event_date','show_name']).sum()['Estimated lead'].reset_index().rename({'Estimated lead':'count'},axis=1)
+    chartable_lead_df['event_type'] = 'lead'
+
+    chartable_purchase_df = chartable_df.groupby(['event_date','show_name']).sum()['Estimated Conversions'].reset_index().rename({'Estimated Conversions':'count'},axis=1)
+    chartable_purchase_df['event_type'] = 'purchase'
+
+    chartable_df = pd.concat([chartable_lead_df,chartable_purchase_df])
     chartable_df['source'] = 'Chartable'
 
 
