@@ -272,16 +272,16 @@ if sonic_im_client == 'Keeps':
         chartable_href = f'<a href="data:file/csv;base64,{b64}">Download your Chartable CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
         st.markdown(chartable_href, unsafe_allow_html=True)
     
-    elif sonic_im_client == 'Ten Thousand':
+elif sonic_im_client == 'Ten Thousand':
 
-        st.header('Ten Thousand File Processor')
-        st.subheader('File Upload')
+    st.header('Ten Thousand File Processor')
+    st.subheader('File Upload')
 
-        st.write('# Under Construction')
+    st.write('# Under Construction')
 
-    elif sonic_im_client == 'Article':
+elif sonic_im_client == 'Article':
 
-        st.header('Article File Processor')
-        st.subheader('File Upload')
+    st.header('Article File Processor')
+    st.subheader('File Upload')
 
-        st.write('# Under Construction')
+    st.write('# Under Construction')
