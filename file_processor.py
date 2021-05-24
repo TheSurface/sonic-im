@@ -5,8 +5,60 @@ from datetime import datetime
 import math
 
 
-st.set_page_config(page_title='Keeps File Processor',layout='wide')
+st.set_page_config(page_title='Sonic IM File Processor',layout='wide')
 sonic_im_client = st.sidebar.radio('Sonic IM Client',['Keeps','Ten Thousand','Article'])
+
+## FUNCTIONS
+# Function to eliminate unnecessary rows after joining the budget to the lead, order, and chartable data sources
+def reduce_df(df,show_field_name):
+    
+    crit_1 = df['Actual Drop Day'] <= cutoff_date
+    crit_2 = (df['event_date'] >= df['Actual Drop Day']) & (df['event_date'] < df['next_drop_date'])
+    crit_3 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] >= df['Actual Drop Day'])
+    crit_4 = df[show_field_name].isnull()
+    crit_5 = (df['event_date'] >= df['Actual Drop Day']) & (df['event_date'] >= df['next_drop_date'])
+    crit_6 = (df['event_date'] <= df['Actual Drop Day']) & (df['event_date'] <= df['next_drop_date'])
+    
+    reduced_df = df[(crit_1 & (crit_2 | crit_3)) | (crit_1 & crit_4) | (crit_1 & (crit_5 | crit_6))]
+    
+    return reduced_df
+
+
+# Function to rebuild the budget with the Actual Drop Day and Next Drop Day columns
+def rebuild_budget(daily_budget_df):
+
+    rebuilt_budget_df = pd.DataFrame()
+
+    for show in daily_budget_df['Show Name'].unique():
+        temp_list = []
+        temp_df = daily_budget_df[daily_budget_df['Show Name'] == show]
+        drop_series = temp_df['Actual Drop Day'].reset_index()
+
+        shifted_drop_series = drop_series.shift(-1)
+        index_list = shifted_drop_series.index.values
+
+        for item in index_list:
+            if math.isnan(shifted_drop_series['index'][item]):
+                temp_list.append(drop_series['Actual Drop Day'][item])
+            else:
+                temp_list.append(shifted_drop_series['Actual Drop Day'][item])
+
+        temp_df.reset_index(inplace=True)
+        temp_df['next_drop_date'] = pd.Series(temp_list)
+        temp_df.drop(['index'],axis=1)
+
+        rebuilt_budget_df = pd.concat([rebuilt_budget_df,temp_df],axis=0)
+
+    return rebuilt_budget_df
+
+
+def zero_out_crit(df):
+    crit_5 = (df['event_date'] > df['Actual Drop Day']) & (df['event_date'] >= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
+    crit_6 = (df['event_date'] < df['Actual Drop Day']) & (df['event_date'] <= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
+    crit_7 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] < df['Actual Drop Day'])
+
+    return [crit_5,crit_6,crit_7]
+
 
 if sonic_im_client == 'Keeps':
     st.header('Keeps File Processor')
@@ -19,50 +71,6 @@ if sonic_im_client == 'Keeps':
     st.write('The output will be a file which can be downloaded and used to update the Keeps Tableau dashboard.')
     st.write('')
     st.write('')
-
-
-    ## FUNCTIONS
-    # Function to eliminate unnecessary rows after joining the budget to the lead, order, and chartable data sources
-    def reduce_df(df,show_field_name):
-        
-        crit_1 = df['Actual Drop Day'] <= cutoff_date
-        crit_2 = (df['event_date'] >= df['Actual Drop Day']) & (df['event_date'] < df['next_drop_date'])
-        crit_3 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] >= df['Actual Drop Day'])
-        crit_4 = df[show_field_name].isnull()
-        crit_5 = (df['event_date'] >= df['Actual Drop Day']) & (df['event_date'] >= df['next_drop_date'])
-        crit_6 = (df['event_date'] <= df['Actual Drop Day']) & (df['event_date'] <= df['next_drop_date'])
-        
-        reduced_df = df[(crit_1 & (crit_2 | crit_3)) | (crit_1 & crit_4) | (crit_1 & (crit_5 | crit_6))]
-        
-        return reduced_df
-
-
-    # Function to rebuild the budget with the Actual Drop Day and Next Drop Day columns
-    def rebuild_budget(daily_budget_df):
-
-        rebuilt_budget_df = pd.DataFrame()
-
-        for show in daily_budget_df['Show Name'].unique():
-            temp_list = []
-            temp_df = daily_budget_df[daily_budget_df['Show Name'] == show]
-            drop_series = temp_df['Actual Drop Day'].reset_index()
-
-            shifted_drop_series = drop_series.shift(-1)
-            index_list = shifted_drop_series.index.values
-
-            for item in index_list:
-                if math.isnan(shifted_drop_series['index'][item]):
-                    temp_list.append(drop_series['Actual Drop Day'][item])
-                else:
-                    temp_list.append(shifted_drop_series['Actual Drop Day'][item])
-
-            temp_df.reset_index(inplace=True)
-            temp_df['next_drop_date'] = pd.Series(temp_list)
-            temp_df.drop(['index'],axis=1)
-
-            rebuilt_budget_df = pd.concat([rebuilt_budget_df,temp_df],axis=0)
-
-        return rebuilt_budget_df
 
 
     # Construct user interface
@@ -143,14 +151,7 @@ if sonic_im_client == 'Keeps':
         leads_df['next_drop_date'] = leads_df['next_drop_date'].apply(lambda x: x.date())
 
 
-        # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or orders
-        def zero_out_crit(df):
-            crit_5 = (df['event_date'] > df['Actual Drop Day']) & (df['event_date'] >= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-            crit_6 = (df['event_date'] < df['Actual Drop Day']) & (df['event_date'] <= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-            crit_7 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] < df['Actual Drop Day'])
-
-            return [crit_5,crit_6,crit_7]
-
+        # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or order
         leads_df.loc[zero_out_crit(leads_df)[0] | zero_out_crit(leads_df)[1] | zero_out_crit(leads_df)[2],'leads'] = 0
         purchases_df.loc[zero_out_crit(purchases_df)[0] | zero_out_crit(purchases_df)[1] | zero_out_crit(purchases_df)[2],'orders'] = 0
 
@@ -190,10 +191,10 @@ if sonic_im_client == 'Keeps':
         chartable_df['show_name'] = chartable_df['Campaign'].apply(lambda x: x.split(' - ')[0])
         chartable_df['event_date'] = chartable_df['Date']
 
-        chartable_lead_df = chartable_df.groupby(['event_date','show_name']).sum()['Estimated lead'].reset_index().rename({'Estimated lead':'count'},axis=1)
+        chartable_lead_df = chartable_df.groupby(['event_date','show_name']).sum()['Confirmed lead'].reset_index().rename({'Confirmed lead':'count'},axis=1)
         chartable_lead_df['event_type'] = 'lead'
 
-        chartable_purchase_df = chartable_df.groupby(['event_date','show_name']).sum()['Estimated Conversions'].reset_index().rename({'Estimated Conversions':'count'},axis=1)
+        chartable_purchase_df = chartable_df.groupby(['event_date','show_name']).sum()['Confirmed Conversions'].reset_index().rename({'Confirmed Conversions':'count'},axis=1)
         chartable_purchase_df['event_type'] = 'purchase'
 
         chartable_df = pd.concat([chartable_lead_df,chartable_purchase_df])
@@ -276,8 +277,86 @@ elif sonic_im_client == 'Ten Thousand':
 
     st.header('Ten Thousand File Processor')
     st.subheader('File Upload')
+    st.write('1. Upload the following three files (Leads, Purchases, Ten Thousand Daily Budget, Chartable Data) using the widgets below')
+    st.write('2. Select a cutoff date')
+    cutoff_date = st.date_input(label='',value=datetime.today().date())
+    st.write('')
+    st.write('')
+    st.write('The output will be a file which can be downloaded and used to update the Ten Thousand Tableau dashboard.')
+    st.write('')
+    st.write('')
 
-    st.write('# Under Construction')
+    col1, col2 = st.beta_columns(2)
+    with col1:
+        uploaded_client_data = st.file_uploader(label='Ten Thousand Client Data',accept_multiple_files=False)
+
+    with col2:
+        uploaded_daily_budget = st.file_uploader(label='Ten Thousand Budget',accept_multiple_files=False)
+
+    uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
+
+     ### Create Data Frames ###
+    if (uploaded_client_data is not None) and (uploaded_daily_budget is not None):
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+        tt_client_data_df = pd.read_csv(uploaded_client_data,parse_dates=['day'])
+
+    elif (uploaded_client_data is not None) and (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+        tt_client_data_df = pd.read_csv(uploaded_client_data,parse_dates=['day'])
+
+
+
+    ### Create CPO and CPL Extract ###
+    if (uploaded_daily_budget is not None)  and (uploaded_client_data is not None):
+
+        # Create DataFrames from uploaded CSV files
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+
+
+        # Create columns for percent of show's audience that is male and female
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
+
+
+        # Rebuild budget
+        rebuilt_budget_df = rebuild_budget(daily_budget_df)
+
+
+        # Create final DataFrames to export for Tableau data sources
+        transactions_df = pd.merge(rebuilt_budget_df,tt_client_data_df,left_on=['Vanity URL'],right_on=['name'],how='left')
+
+
+        # Change date column name to event_date
+        transactions_df.rename({'day':'event_date'}, axis=1, inplace=True)
+
+
+        # Convert date fields to just dates
+        transactions_df['event_date'] = transactions_df['event_date'].apply(lambda x: x.date())
+        transactions_df['Actual Drop Day'] = transactions_df['Actual Drop Day'].apply(lambda x: x.date())
+        transactions_df['next_drop_date'] = transactions_df['next_drop_date'].apply(lambda x: x.date())
+
+
+        # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or order
+        transactions_df.loc[zero_out_crit(transactions_df)[0] | zero_out_crit(transactions_df)[1] | zero_out_crit(transactions_df)[2],'orders'] = 0
+        final_transactions_df = reduce_df(transactions_df,'name')
+        final_transactions_df.fillna(value={'orders':0},inplace=True)
+        
+        st.write('')
+        st.write('')
+
+
+        ### OUTPUT ###
+        st.subheader('Data Source Output')
+        st.write('')
+        st.write('')
+
+        # Create download link for transactions file
+        client_data_csv = final_transactions_df.to_csv(index=False)
+        b64 = base64.b64encode(client_data_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+        client_data_href = f'<a href="data:file/csv;base64,{b64}">Download your Client Data CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
+        st.markdown(client_data_href, unsafe_allow_html=True)
+
 
 elif sonic_im_client == 'Article':
 
