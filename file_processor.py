@@ -246,12 +246,12 @@ if sonic_im_client == 'Keeps':
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'count'] = 0
 
         chartable_final_df = reduce_df(chartable_final_df,'show_name')
-        chartable_final_grp_df = chartable_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','event_type']).sum()['count'].reset_index()
+        chartable_final_grp_df = chartable_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','Client Rate','event_type']).sum()['count'].reset_index()
 
         
         looker_final_df = reduce_df(looker_final_df,'show_name')
         looker_final_df = looker_final_df[looker_final_df['Show Name'].isin(chartable_final_df['Show Name'].unique())]
-        looker_final_grp_df = looker_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','event_type']).sum()['count'].reset_index()
+        looker_final_grp_df = looker_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','Client Rate','event_type']).sum()['count'].reset_index()
 
 
         ## Produce final data frame ##
