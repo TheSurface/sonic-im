@@ -10,14 +10,14 @@ sonic_im_client = st.sidebar.radio('Sonic IM Client',['Keeps','Ten Thousand','Ar
 
 ## FUNCTIONS
 # Function to eliminate unnecessary rows after joining the budget to the lead, order, and chartable data sources
-def reduce_df(df,show_field_name):
+def reduce_df(df,show_field_name,date_field_name):
     
     crit_1 = df['Actual Drop Day'] <= cutoff_date
-    crit_2 = (df['event_date'] >= df['Actual Drop Day']) & (df['event_date'] < df['next_drop_date'])
-    crit_3 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] >= df['Actual Drop Day'])
+    crit_2 = (df[date_field_name] >= df['Actual Drop Day']) & (df[date_field_name] < df['next_drop_date'])
+    crit_3 = (df['Actual Drop Day'] == df['next_drop_date']) & (df[date_field_name] >= df['Actual Drop Day'])
     crit_4 = df[show_field_name].isnull()
-    crit_5 = (df['event_date'] >= df['Actual Drop Day']) & (df['event_date'] >= df['next_drop_date'])
-    crit_6 = (df['event_date'] <= df['Actual Drop Day']) & (df['event_date'] <= df['next_drop_date'])
+    crit_5 = (df[date_field_name] >= df['Actual Drop Day']) & (df[date_field_name] >= df['next_drop_date'])
+    crit_6 = (df[date_field_name] <= df['Actual Drop Day']) & (df[date_field_name] <= df['next_drop_date'])
     
     reduced_df = df[(crit_1 & (crit_2 | crit_3)) | (crit_1 & crit_4) | (crit_1 & (crit_5 | crit_6))]
     
@@ -155,10 +155,10 @@ if sonic_im_client == 'Keeps':
         leads_df.loc[zero_out_crit(leads_df)[0] | zero_out_crit(leads_df)[1] | zero_out_crit(leads_df)[2],'leads'] = 0
         purchases_df.loc[zero_out_crit(purchases_df)[0] | zero_out_crit(purchases_df)[1] | zero_out_crit(purchases_df)[2],'orders'] = 0
 
-        final_purchases_df = reduce_df(purchases_df,'Utm Campaign')
+        final_purchases_df = reduce_df(purchases_df,'Utm Campaign','event_date')
         final_purchases_df.fillna(value={'orders':0},inplace=True)
 
-        final_leads_df = reduce_df(leads_df,'Utm Campaign')
+        final_leads_df = reduce_df(leads_df,'Utm Campaign','event_date')
         final_leads_df.fillna(value={'leads':0},inplace=True)
 
 
@@ -245,11 +245,11 @@ if sonic_im_client == 'Keeps':
         looker_final_df.loc[zero_out_crit(looker_final_df)[0] | zero_out_crit(looker_final_df)[1] | zero_out_crit(looker_final_df)[2],'count'] = 0
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'count'] = 0
 
-        chartable_final_df = reduce_df(chartable_final_df,'show_name')
+        chartable_final_df = reduce_df(chartable_final_df,'show_name','event_date')
         chartable_final_grp_df = chartable_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','Client Rate','event_type']).sum()['count'].reset_index()
 
         
-        looker_final_df = reduce_df(looker_final_df,'show_name')
+        looker_final_df = reduce_df(looker_final_df,'show_name','event_date')
         looker_final_df = looker_final_df[looker_final_df['Show Name'].isin(chartable_final_df['Show Name'].unique())]
         looker_final_grp_df = looker_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','Client Rate','event_type']).sum()['count'].reset_index()
 
@@ -300,10 +300,9 @@ elif sonic_im_client == 'Ten Thousand':
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         tt_client_data_df = pd.read_csv(uploaded_client_data,parse_dates=['day'])
 
-    elif (uploaded_client_data is not None) and (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+    elif (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
-        tt_client_data_df = pd.read_csv(uploaded_client_data,parse_dates=['day'])
 
 
 
@@ -339,7 +338,7 @@ elif sonic_im_client == 'Ten Thousand':
 
         # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or order
         transactions_df.loc[zero_out_crit(transactions_df)[0] | zero_out_crit(transactions_df)[1] | zero_out_crit(transactions_df)[2],'orders'] = 0
-        final_transactions_df = reduce_df(transactions_df,'name')
+        final_transactions_df = reduce_df(transactions_df,'name','event_date')
         final_transactions_df.fillna(value={'orders':0},inplace=True)
         
         st.write('')
@@ -356,6 +355,64 @@ elif sonic_im_client == 'Ten Thousand':
         b64 = base64.b64encode(client_data_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
         client_data_href = f'<a href="data:file/csv;base64,{b64}">Download your Client Data CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
         st.markdown(client_data_href, unsafe_allow_html=True)
+
+
+    elif (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+
+
+        ## Daily Budget Processing ##
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+        daily_budget_df['Actual Drop Day'] = daily_budget_df['Actual Drop Day'].apply(lambda x: x.date())
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
+
+
+        # Rebuild budget
+        rebuilt_budget_df = rebuild_budget(daily_budget_df)
+
+
+        ## Creation of final files ##
+        chartable_final_df = pd.merge(rebuilt_budget_df, chartable_df, left_on=['Show Name'], right_on=['Campaign'], how='left')
+        #chartable_final_df = chartable_final_df[~chartable_final_df['Estimated Revenue'].isnull()]
+
+
+        ## Reduce rows and group records ##
+        def zero_out_crit(df):
+            crit_5 = (df['Date'] > df['Actual Drop Day']) & (df['Date'] >= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
+            crit_6 = (df['Date'] < df['Actual Drop Day']) & (df['Date'] <= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
+            crit_7 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['Date'] < df['Actual Drop Day'])
+
+            return [crit_5,crit_6,crit_7]
+
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Unique Households'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Unique Households'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Unique Visitors'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Unique Visitors'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed purchase'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated purchase'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Conversions'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Conversions'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Impressions'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Reach'] = 0
+
+        chartable_final_df = reduce_df(chartable_final_df,'Campaign','Date')
+
+
+        st.write('')
+        st.write('')
+
+
+
+        ### OUTPUT ###
+        st.subheader('Data Source Output')
+        st.write('')
+        st.write('')
+
+        # Create download link for transactions file
+        chartable_csv = chartable_final_df.to_csv(index=False)
+        b64 = base64.b64encode(chartable_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+        chartable_href = f'<a href="data:file/csv;base64,{b64}">Download your Chartable CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
+        st.markdown(chartable_href, unsafe_allow_html=True)
 
 
 elif sonic_im_client == 'Article':
