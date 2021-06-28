@@ -200,7 +200,7 @@ if sonic_im_client == 'Keeps':
     elif (uploaded_leads is not None) and (uploaded_daily_budget is not None) and (uploaded_purchases is not None) and (uploaded_chartable_data is not None):
 
         ## Chartable Processing ##
-        chartable_df['show_name'] = chartable_df['Campaign'].apply(lambda x: x.split(' - ')[0])
+        chartable_df['show_name'] = chartable_df['Ad Campaign Name'].apply(lambda x: x.split(' - ')[0])
         chartable_df['event_date'] = chartable_df['Date']
 
         chartable_lead_df = chartable_df.groupby(['event_date','show_name']).sum()['Confirmed lead'].reset_index().rename({'Confirmed lead':'count'},axis=1)
