@@ -3,6 +3,8 @@ import streamlit as st
 import base64
 from datetime import datetime
 import math
+from IPython.display import HTML
+import json
 
 
 st.set_page_config(page_title='Sonic IM File Processor',layout='wide')
@@ -10,6 +12,15 @@ sonic_im_client = st.sidebar.radio('Sonic IM Client',['Keeps','Ten Thousand','Ar
 
 ## FUNCTIONS
 # Function to eliminate unnecessary rows after joining the budget to the lead, order, and chartable data sources
+def create_download_link(df, title = "Download CSV file", filename = "data.csv", with_index=False):  
+    csv = df.to_csv(index = with_index)
+    b64 = base64.b64encode(csv.encode())
+    payload = b64.decode()
+    html = '<a download="{filename}" href="data:text/csv;base64,{payload}" target="_blank">{title}</a>'
+    html = html.format(payload=payload,title=title,filename=filename)
+    return HTML(html)
+
+
 def reduce_df(df,show_field_name,date_field_name):
     
     crit_1 = df['Actual Drop Day'] <= cutoff_date
@@ -180,8 +191,9 @@ if sonic_im_client == 'Keeps':
 
         leads_csv = final_leads_df.to_csv(index=False)
         b64 = base64.b64encode(leads_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        leads_href = f'<a href="data:file/csv;base64,{b64}">Download your Leads CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
+        leads_href = f'<a href="data:file/csv;base64,{b64}" download="leads.csv">Download your Leads CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
         st.markdown(leads_href, unsafe_allow_html=True)
+
 
 
     ### Create Chartable Extract ###
@@ -372,7 +384,7 @@ elif sonic_im_client == 'Ten Thousand':
 
 
         ## Creation of final files ##
-        chartable_final_df = pd.merge(rebuilt_budget_df, chartable_df, left_on=['Show Name'], right_on=['Campaign'], how='left')
+        chartable_final_df = pd.merge(rebuilt_budget_df, chartable_df, left_on=['Show Name'], right_on=['Ad Campaign Name'], how='left')
         #chartable_final_df = chartable_final_df[~chartable_final_df['Estimated Revenue'].isnull()]
 
 
@@ -395,7 +407,7 @@ elif sonic_im_client == 'Ten Thousand':
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Impressions'] = 0
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Reach'] = 0
 
-        chartable_final_df = reduce_df(chartable_final_df,'Campaign','Date')
+        chartable_final_df = reduce_df(chartable_final_df,'Ad Campaign Name','Date')
 
 
         st.write('')
