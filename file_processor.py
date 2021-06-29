@@ -21,14 +21,14 @@ def create_download_link(df, title = "Download CSV file", filename = "data.csv",
     return HTML(html)
 
 
-def reduce_df(df,show_field_name,date_field_name):
+def reduce_df(df,show_field_name,date_field_name,date_series_name='Broadcast Week'):
     
-    crit_1 = df['Actual Drop Day'] <= cutoff_date
-    crit_2 = (df[date_field_name] >= df['Actual Drop Day']) & (df[date_field_name] < df['next_drop_date'])
-    crit_3 = (df['Actual Drop Day'] == df['next_drop_date']) & (df[date_field_name] >= df['Actual Drop Day'])
+    crit_1 = df[date_series_name] <= cutoff_date
+    crit_2 = (df[date_field_name] >= df[date_series_name]) & (df[date_field_name] < df['next_drop_date'])
+    crit_3 = (df[date_series_name] == df['next_drop_date']) & (df[date_field_name] >= df[date_series_name])
     crit_4 = df[show_field_name].isnull()
-    crit_5 = (df[date_field_name] >= df['Actual Drop Day']) & (df[date_field_name] >= df['next_drop_date'])
-    crit_6 = (df[date_field_name] <= df['Actual Drop Day']) & (df[date_field_name] <= df['next_drop_date'])
+    crit_5 = (df[date_field_name] >= df[date_series_name]) & (df[date_field_name] >= df['next_drop_date'])
+    crit_6 = (df[date_field_name] <= df[date_series_name]) & (df[date_field_name] <= df['next_drop_date'])
     
     reduced_df = df[(crit_1 & (crit_2 | crit_3)) | (crit_1 & crit_4) | (crit_1 & (crit_5 | crit_6))]
     
@@ -36,23 +36,23 @@ def reduce_df(df,show_field_name,date_field_name):
 
 
 # Function to rebuild the budget with the Actual Drop Day and Next Drop Day columns
-def rebuild_budget(daily_budget_df):
+def rebuild_budget(daily_budget_df,date_series_name='Broadcast Week'):
 
     rebuilt_budget_df = pd.DataFrame()
 
     for show in daily_budget_df['Show Name'].unique():
         temp_list = []
         temp_df = daily_budget_df[daily_budget_df['Show Name'] == show]
-        drop_series = temp_df['Actual Drop Day'].reset_index()
+        drop_series = temp_df[date_series_name].reset_index()
 
         shifted_drop_series = drop_series.shift(-1)
         index_list = shifted_drop_series.index.values
 
         for item in index_list:
             if math.isnan(shifted_drop_series['index'][item]):
-                temp_list.append(drop_series['Actual Drop Day'][item])
+                temp_list.append(drop_series[date_series_name][item])
             else:
-                temp_list.append(shifted_drop_series['Actual Drop Day'][item])
+                temp_list.append(shifted_drop_series[date_series_name][item])
 
         temp_df.reset_index(inplace=True)
         temp_df['next_drop_date'] = pd.Series(temp_list)
@@ -63,10 +63,10 @@ def rebuild_budget(daily_budget_df):
     return rebuilt_budget_df
 
 
-def zero_out_crit(df):
-    crit_5 = (df['event_date'] > df['Actual Drop Day']) & (df['event_date'] >= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-    crit_6 = (df['event_date'] < df['Actual Drop Day']) & (df['event_date'] <= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-    crit_7 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] < df['Actual Drop Day'])
+def zero_out_crit(df,date_series_name='Broadcast Week'):
+    crit_5 = (df['event_date'] > df[date_series_name]) & (df['event_date'] >= df['next_drop_date']) & (df[date_series_name] != df['next_drop_date'])
+    crit_6 = (df['event_date'] < df[date_series_name]) & (df['event_date'] <= df['next_drop_date']) & (df[date_series_name] != df['next_drop_date'])
+    crit_7 = (df[date_series_name] == df['next_drop_date']) & (df['event_date'] < df[date_series_name])
 
     return [crit_5,crit_6,crit_7]
 
@@ -139,7 +139,7 @@ if sonic_im_client == 'Keeps':
 
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df)
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
 
 
         # Create final DataFrames to export for Tableau data sources
@@ -163,13 +163,13 @@ if sonic_im_client == 'Keeps':
 
 
         # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or order
-        leads_df.loc[zero_out_crit(leads_df)[0] | zero_out_crit(leads_df)[1] | zero_out_crit(leads_df)[2],'leads'] = 0
-        purchases_df.loc[zero_out_crit(purchases_df)[0] | zero_out_crit(purchases_df)[1] | zero_out_crit(purchases_df)[2],'orders'] = 0
+        leads_df.loc[zero_out_crit(leads_df,'Actual Drop Day')[0] | zero_out_crit(leads_df,'Actual Drop Day')[1] | zero_out_crit(leads_df,'Actual Drop Day')[2],'leads'] = 0
+        purchases_df.loc[zero_out_crit(purchases_df,'Actual Drop Day')[0] | zero_out_crit(purchases_df,'Actual Drop Day')[1] | zero_out_crit(purchases_df,'Actual Drop Day')[2],'orders'] = 0
 
-        final_purchases_df = reduce_df(purchases_df,'Utm Campaign','event_date')
+        final_purchases_df = reduce_df(purchases_df,'Utm Campaign','event_date','Actual Drop Day')
         final_purchases_df.fillna(value={'orders':0},inplace=True)
 
-        final_leads_df = reduce_df(leads_df,'Utm Campaign','event_date')
+        final_leads_df = reduce_df(leads_df,'Utm Campaign','event_date','Actual Drop Day')
         final_leads_df.fillna(value={'leads':0},inplace=True)
 
 
@@ -236,7 +236,7 @@ if sonic_im_client == 'Keeps':
         daily_budget_df['Actual Drop Day'] = daily_budget_df['Actual Drop Day'].apply(lambda x: x.date())
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df)
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
 
 
         ## Creation of final files ##
@@ -247,21 +247,14 @@ if sonic_im_client == 'Keeps':
 
 
         ## Reduce rows and group records ##
-        def zero_out_crit(df):
-            crit_5 = (df['event_date'] > df['Actual Drop Day']) & (df['event_date'] >= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-            crit_6 = (df['event_date'] < df['Actual Drop Day']) & (df['event_date'] <= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-            crit_7 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['event_date'] < df['Actual Drop Day'])
+        looker_final_df.loc[zero_out_crit(looker_final_df,'Actual Drop Day')[0] | zero_out_crit(looker_final_df,'Actual Drop Day')[1] | zero_out_crit(looker_final_df,'Actual Drop Day')[2],'count'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df,'Actual Drop Day')[0] | zero_out_crit(chartable_final_df,'Actual Drop Day')[1] | zero_out_crit(chartable_final_df,'Actual Drop Day')[2],'count'] = 0
 
-            return [crit_5,crit_6,crit_7]
-
-        looker_final_df.loc[zero_out_crit(looker_final_df)[0] | zero_out_crit(looker_final_df)[1] | zero_out_crit(looker_final_df)[2],'count'] = 0
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'count'] = 0
-
-        chartable_final_df = reduce_df(chartable_final_df,'show_name','event_date')
+        chartable_final_df = reduce_df(chartable_final_df,'show_name','event_date','Actual Drop Day')
         chartable_final_grp_df = chartable_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','Client Rate','event_type']).sum()['count'].reset_index()
 
         
-        looker_final_df = reduce_df(looker_final_df,'show_name','event_date')
+        looker_final_df = reduce_df(looker_final_df,'show_name','event_date','Actual Drop Day')
         looker_final_df = looker_final_df[looker_final_df['Show Name'].isin(chartable_final_df['Show Name'].unique())]
         looker_final_grp_df = looker_final_df.groupby(['source','Show Name','Actual Drop Day','next_drop_date','Client Rate','event_type']).sum()['count'].reset_index()
 
@@ -327,7 +320,7 @@ elif sonic_im_client == 'Ten Thousand':
 
         # Create columns for percent of show's audience that is male and female
         daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1 else 0)
 
 
         # Rebuild budget
