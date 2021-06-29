@@ -309,11 +309,11 @@ elif sonic_im_client == 'Ten Thousand':
 
      ### Create Data Frames ###
     if (uploaded_client_data is not None) and (uploaded_daily_budget is not None):
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week'])
         tt_client_data_df = pd.read_csv(uploaded_client_data,parse_dates=['day'])
 
     elif (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
 
@@ -322,7 +322,7 @@ elif sonic_im_client == 'Ten Thousand':
     if (uploaded_daily_budget is not None)  and (uploaded_client_data is not None):
 
         # Create DataFrames from uploaded CSV files
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Broadcast Week'])
 
 
         # Create columns for percent of show's audience that is male and female
@@ -344,7 +344,7 @@ elif sonic_im_client == 'Ten Thousand':
 
         # Convert date fields to just dates
         transactions_df['event_date'] = transactions_df['event_date'].apply(lambda x: x.date())
-        transactions_df['Actual Drop Day'] = transactions_df['Actual Drop Day'].apply(lambda x: x.date())
+        transactions_df['Broadcast Week'] = transactions_df['Broadcast Week'].apply(lambda x: x.date())
         transactions_df['next_drop_date'] = transactions_df['next_drop_date'].apply(lambda x: x.date())
 
 
@@ -373,8 +373,8 @@ elif sonic_im_client == 'Ten Thousand':
 
 
         ## Daily Budget Processing ##
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
-        daily_budget_df['Actual Drop Day'] = daily_budget_df['Actual Drop Day'].apply(lambda x: x.date())
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Broadcast Week'])
+        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
         daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
         daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
 
@@ -390,9 +390,9 @@ elif sonic_im_client == 'Ten Thousand':
 
         ## Reduce rows and group records ##
         def zero_out_crit(df):
-            crit_5 = (df['Date'] > df['Actual Drop Day']) & (df['Date'] >= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-            crit_6 = (df['Date'] < df['Actual Drop Day']) & (df['Date'] <= df['next_drop_date']) & (df['Actual Drop Day'] != df['next_drop_date'])
-            crit_7 = (df['Actual Drop Day'] == df['next_drop_date']) & (df['Date'] < df['Actual Drop Day'])
+            crit_5 = (df['Date'] > df['Broadcast Week']) & (df['Date'] >= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
+            crit_6 = (df['Date'] < df['Broadcast Week']) & (df['Date'] <= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
+            crit_7 = (df['Broadcast Week'] == df['next_drop_date']) & (df['Date'] < df['Broadcast Week'])
 
             return [crit_5,crit_6,crit_7]
 
