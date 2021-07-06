@@ -369,7 +369,7 @@ elif sonic_im_client == 'Ten Thousand':
         daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Broadcast Week'])
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
         daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1 else 0)
 
 
         # Rebuild budget
