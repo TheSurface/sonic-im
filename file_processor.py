@@ -416,7 +416,7 @@ elif sonic_im_client == 'Ten Thousand':
         # Create download link for transactions file
         chartable_csv = chartable_final_df.to_csv(index=False)
         b64 = base64.b64encode(chartable_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        chartable_href = f'<a href="data:file/csv;base64,{b64}">Download your Chartable CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
+        chartable_href = f'<a href="data:file/csv;base64,{b64}" download="chartable.csv">Download your Chartable CSV File</a> (right-click and save)'
         st.markdown(chartable_href, unsafe_allow_html=True)
 
 
