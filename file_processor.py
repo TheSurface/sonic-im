@@ -399,6 +399,10 @@ elif sonic_im_client == 'Ten Thousand':
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Conversions'] = 0
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Impressions'] = 0
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Reach'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Revenue'] = 0
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Revenue'] = 0
+
+
 
         chartable_final_df = reduce_df(chartable_final_df,'Ad Campaign Name','Date')
 
