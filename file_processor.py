@@ -186,12 +186,12 @@ if sonic_im_client == 'Keeps':
         # Create download link for transactions file
         orders_csv = final_purchases_df.to_csv(index=False)
         b64 = base64.b64encode(orders_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        orders_href = f'<a href="data:file/csv;base64,{b64}" download="orders.csv">Download your Orders CSV File</a> (right-click and save)'
+        orders_href = f'<a href="data:file/csv;base64,{b64}" download="orders.csv">Download your Orders CSV File</a>'
         st.markdown(orders_href, unsafe_allow_html=True)
 
         leads_csv = final_leads_df.to_csv(index=False)
         b64 = base64.b64encode(leads_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        leads_href = f'<a href="data:file/csv;base64,{b64}" download="leads.csv">Download your Leads CSV File</a> (right-click and save)'
+        leads_href = f'<a href="data:file/csv;base64,{b64}" download="leads.csv">Download your Leads CSV File</a>'
         st.markdown(leads_href, unsafe_allow_html=True)
 
 
@@ -275,8 +275,9 @@ if sonic_im_client == 'Keeps':
         # Create download link for transactions file
         chartable_csv = final_df.to_csv(index=False)
         b64 = base64.b64encode(chartable_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        chartable_href = f'<a href="data:file/csv;base64,{b64}">Download your Chartable CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
+        chartable_href = f'<a href="data:file/csv;base64,{b64}" download="chartable.csv">Download your Chartable CSV File</a>'
         st.markdown(chartable_href, unsafe_allow_html=True)
+
     
 elif sonic_im_client == 'Ten Thousand':
 
