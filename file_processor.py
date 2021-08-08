@@ -8,7 +8,7 @@ import json
 
 
 st.set_page_config(page_title='Sonic IM File Processor',layout='wide')
-sonic_im_client = st.sidebar.radio('Sonic IM Client',['Keeps','Ten Thousand','Article'])
+sonic_im_client = st.sidebar.radio('Sonic IM Client',['Keeps','Ten Thousand','Chartable Baseline'])
 
 ## FUNCTIONS
 # Function to eliminate unnecessary rows after joining the budget to the lead, order, and chartable data sources
@@ -423,9 +423,78 @@ elif sonic_im_client == 'Ten Thousand':
         st.markdown(chartable_href, unsafe_allow_html=True)
 
 
-elif sonic_im_client == 'Article':
+elif sonic_im_client == 'Chartable Baseline':
 
-    st.header('Article File Processor')
+    st.header('Chartable Baseline - File Processor')
     st.subheader('File Upload')
+    st.write("1. Upload the client's budget and chartable files using the widgets below")
+    st.write('2. Select a cutoff date')
+    cutoff_date = st.date_input(label='',value=datetime.today().date())
+    st.write('')
+    st.write('')
+    st.write("The output will be a file which can be downloaded and used to update the client's baseline Tableau dashboard.")
+    st.write('')
+    st.write('')
 
-    st.write('# Under Construction')
+
+
+    uploaded_daily_budget = st.file_uploader(label='Client Budget',accept_multiple_files=False)
+
+    uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
+
+     ### Create Data Frames ###
+    if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week'])
+        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+
+    
+
+    if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+
+
+        ## Daily Budget Processing ##
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Broadcast Week'])
+        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail'] else 0)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail'] else 0)
+
+        # Rebuild budget
+        rebuilt_budget_df = rebuild_budget(daily_budget_df)
+
+
+        ## Creation of final files ##
+        chartable_final_df = pd.merge(rebuilt_budget_df, chartable_df, left_on=['Show Name'], right_on=['Ad Campaign Name'], how='left')
+
+
+        ## Reduce rows and group records ##
+        def zero_out_crit(df):
+            crit_5 = (df['Date'] > df['Broadcast Week']) & (df['Date'] >= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
+            crit_6 = (df['Date'] < df['Broadcast Week']) & (df['Date'] <= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
+            crit_7 = (df['Broadcast Week'] == df['next_drop_date']) & (df['Date'] < df['Broadcast Week'])
+
+            return [crit_5,crit_6,crit_7]
+
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Unique Visitors'] = None
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Unique Visitors'] = None
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Impressions'] = None
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Reach'] = None
+
+
+        chartable_final_df = reduce_df(chartable_final_df,'Ad Campaign Name','Date')
+
+
+        st.write('')
+        st.write('')
+
+
+
+        ### OUTPUT ###
+        st.subheader('Data Source Output')
+        st.write('')
+        st.write('')
+
+        # Create download link for transactions file
+        chartable_csv = chartable_final_df.to_csv(index=False)
+        b64 = base64.b64encode(chartable_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+        chartable_href = f'<a href="data:file/csv;base64,{b64}" download="chartable.csv">Download your Chartable CSV File</a> (right-click and save)'
+        st.markdown(chartable_href, unsafe_allow_html=True)
