@@ -320,8 +320,8 @@ elif sonic_im_client == 'Ten Thousand':
 
 
         # Create columns for percent of show's audience that is male and female
-        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail'] else 0)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail'] else 0)
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None,'NaN'] and isinstance(x,float) is False else 0)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None,'NaN'] and isinstance(x,float) is False else 0)
 
         # Rebuild budget
         rebuilt_budget_df = rebuild_budget(daily_budget_df)
@@ -368,8 +368,8 @@ elif sonic_im_client == 'Ten Thousand':
         ## Daily Budget Processing ##
         daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Broadcast Week'])
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail'] else 0)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail'] else 0)
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None] else 0)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None] else 0)
 
         # Rebuild budget
         rebuilt_budget_df = rebuild_budget(daily_budget_df)
@@ -478,6 +478,9 @@ elif sonic_im_client == 'Chartable Baseline':
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Unique Visitors'] = None
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Impressions'] = None
         chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Reach'] = None
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed lead'] = None
+        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated lead'] = None
+
 
 
         chartable_final_df = reduce_df(chartable_final_df,'Ad Campaign Name','Date')
