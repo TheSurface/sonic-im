@@ -10,7 +10,7 @@ import pandasql as ps
 
 
 st.set_page_config(page_title='Sonic IM File Processor',layout='wide')
-sonic_im_client = st.sidebar.radio('Sonic IM Client',['Keeps','Ten Thousand','Chartable Baseline'])
+sonic_im_client = st.sidebar.radio('Sonic IM Client',['Keeps','Ten Thousand','Other'])
 
 ## FUNCTIONS ##
 # Function to rebuild the budget with the Actual Drop Day and Next Drop Day columns
@@ -41,6 +41,28 @@ def rebuild_budget(daily_budget_df,date_series_name='Broadcast Week',show_series
     return rebuilt_budget_df
 
 
+def reduce_df(df,show_field_name,date_field_name,date_series_name='Broadcast Week'):
+    
+    crit_1 = df[date_series_name] <= cutoff_date
+    crit_2 = (df[date_field_name] >= df[date_series_name]) & (df[date_field_name] < df['next_drop_date'])
+    crit_3 = (df[date_series_name] == df['next_drop_date']) & (df[date_field_name] >= df[date_series_name])
+    crit_4 = df[show_field_name].isnull()
+    crit_5 = (df[date_field_name] >= df[date_series_name]) & (df[date_field_name] >= df['next_drop_date'])
+    crit_6 = (df[date_field_name] <= df[date_series_name]) & (df[date_field_name] <= df['next_drop_date'])
+    
+    reduced_df = df[(crit_1 & (crit_2 | crit_3)) | (crit_1 & crit_4) | (crit_1 & (crit_5 | crit_6))]
+    
+    return reduced_df
+
+
+def zero_out_crit(df,date_series_name='Broadcast Week'):
+    crit_5 = (df['event_date'] > df[date_series_name]) & (df['event_date'] >= df['next_drop_date']) & (df[date_series_name] != df['next_drop_date'])
+    crit_6 = (df['event_date'] < df[date_series_name]) & (df['event_date'] <= df['next_drop_date']) & (df[date_series_name] != df['next_drop_date'])
+    crit_7 = (df[date_series_name] == df['next_drop_date']) & (df['event_date'] < df[date_series_name])
+
+    return [crit_5,crit_6,crit_7]
+
+
 if sonic_im_client == 'Keeps':
     st.header('Keeps File Processor')
     st.subheader('File Upload')
@@ -55,7 +77,7 @@ if sonic_im_client == 'Keeps':
 
 
     # Construct user interface
-    col1, col2 = st.beta_columns(2)
+    col1, col2 = st.columns(2)
 
     with col1:
         uploaded_purchases = st.file_uploader(label='Purchases',accept_multiple_files=False)
@@ -328,34 +350,46 @@ if sonic_im_client == 'Keeps':
     
 elif sonic_im_client == 'Ten Thousand':
 
-    st.header('Ten Thousand File Processor')
+    
+    st.header('Sonic File Processor')
     st.subheader('File Upload')
-    st.write('1. Upload the following three files (Leads, Purchases, Ten Thousand Daily Budget, Chartable Data) using the widgets below')
-    st.write('2. Select a cutoff date')
-    cutoff_date = st.date_input(label='',value=datetime.today().date())
+
+    st.write('1. Upload the complete budget from Salesforce')
+    uploaded_daily_budget = st.file_uploader(label='',accept_multiple_files=False)
+
     st.write('')
     st.write('')
-    st.write('The output will be a file which can be downloaded and used to update the Ten Thousand Tableau dashboard.')
-    st.write('')
-    st.write('')
+    if uploaded_daily_budget is not None:
+        st.write('2. Select the client you want to process')
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
+        client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
 
-    col1, col2 = st.beta_columns(2)
-    with col1:
-        uploaded_client_data = st.file_uploader(label='Ten Thousand Client Data',accept_multiple_files=False)
+        st.write('')
+        st.write('')
+        st.write("3. Upload the client's proprietary data and Chartable data")
+        col1, col2 = st.columns(2)
+        with col1:
+            uploaded_client_data = st.file_uploader(label='Client Data',accept_multiple_files=False)
 
-    with col2:
-        uploaded_daily_budget = st.file_uploader(label='Ten Thousand Budget',accept_multiple_files=False)
+        with col2:
+            uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
 
-    uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
 
-     ### Create Data Frames ###
-    if (uploaded_client_data is not None) and (uploaded_daily_budget is not None):
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week'])
-        tt_client_data_df = pd.read_csv(uploaded_client_data,parse_dates=['day'])
+        st.write('')
+        st.write('')
+        st.write('4. Select a cutoff date')
+        cutoff_date = st.date_input(label='',value=datetime.today().date())
 
-    elif (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week'])
-        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+         ### Create Data Frames ###
+        if uploaded_client_data is not None:
+            tt_client_data_df = pd.read_csv(uploaded_client_data,parse_dates=['day'])
+
+        elif uploaded_chartable_data is not None:
+            chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+
+    else:
+        pass
+
 
 
 
@@ -363,19 +397,19 @@ elif sonic_im_client == 'Ten Thousand':
     if (uploaded_daily_budget is not None)  and (uploaded_client_data is not None):
 
         # Create DataFrames from uploaded CSV files
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Broadcast Week'])
+        daily_budget_df = daily_budget_df[daily_budget_df['Account Name: Account Name'] == client].sort_values(by=['Podcast/Station: Account Name','Date'])
 
 
         # Create columns for percent of show's audience that is male and female
-        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None,'NaN'] and isinstance(x,float) is False else 0)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None,'NaN'] and isinstance(x,float) is False else 0)
+        daily_budget_df['Percent Male'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df)
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,date_series_name='Date',show_series_name='Podcast/Station: Account Name')
 
 
         # Create final DataFrames to export for Tableau data sources
-        transactions_df = pd.merge(rebuilt_budget_df,tt_client_data_df,left_on=['Vanity URL'],right_on=['name'],how='left')
+        transactions_df = pd.merge(rebuilt_budget_df,tt_client_data_df,left_on=['Code'],right_on=['name'],how='left')
 
 
         # Change date column name to event_date
@@ -384,13 +418,13 @@ elif sonic_im_client == 'Ten Thousand':
 
         # Convert date fields to just dates
         transactions_df['event_date'] = transactions_df['event_date'].apply(lambda x: x.date())
-        transactions_df['Broadcast Week'] = transactions_df['Broadcast Week'].apply(lambda x: x.date())
+        transactions_df['Date'] = transactions_df['Date'].apply(lambda x: x.date())
         transactions_df['next_drop_date'] = transactions_df['next_drop_date'].apply(lambda x: x.date())
 
 
         # Create final leads and purchases DataFrames by eliminating negative date_diffs and including drops which had 0 leads or order
-        transactions_df.loc[zero_out_crit(transactions_df)[0] | zero_out_crit(transactions_df)[1] | zero_out_crit(transactions_df)[2],'orders'] = 0
-        final_transactions_df = reduce_df(transactions_df,'name','event_date')
+        transactions_df.loc[zero_out_crit(transactions_df,date_series_name='Date')[0] | zero_out_crit(transactions_df,date_series_name='Date')[1] | zero_out_crit(transactions_df,date_series_name='Date')[2],'orders'] = 0
+        final_transactions_df = reduce_df(transactions_df,'name','event_date',date_series_name='Date')
         final_transactions_df.fillna(value={'orders':0},inplace=True)
         
         st.write('')
@@ -404,53 +438,78 @@ elif sonic_im_client == 'Ten Thousand':
 
         # Create download link for transactions file
         client_data_csv = final_transactions_df.to_csv(index=False)
-        b64 = base64.b64encode(client_data_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        client_data_href = f'<a href="data:file/csv;base64,{b64}">Download your Client Data CSV File</a> (right-click and save as &lt;some_name&gt;.csv)'
-        st.markdown(client_data_href, unsafe_allow_html=True)
+        st.download_button(label='Download Client Data',data=client_data_csv,file_name='client_data.csv',mime='text/csv')
 
 
     elif (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
 
 
         ## Daily Budget Processing ##
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Broadcast Week'])
-        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None] else 0)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100 if len(x.split('/')) > 1  and x not in ['New','Not avail','',None] else 0)
+        daily_budget_df = daily_budget_df[daily_budget_df['Account Name: Account Name'] == client].sort_values(by=['Podcast/Station: Account Name','Date'])
+        daily_budget_df['Percent Male'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
+
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df)
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,date_series_name='Date',show_series_name='Podcast/Station: Account Name')
 
 
-        ## Creation of final files ##
-        chartable_final_df = pd.merge(rebuilt_budget_df, chartable_df, left_on=['Show Name'], right_on=['Ad Campaign Name'], how='left')
-        #chartable_final_df = chartable_final_df[~chartable_final_df['Estimated Revenue'].isnull()]
+        # Aggregate Chartable data
+        chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum().reset_index()
 
 
-        ## Reduce rows and group records ##
-        def zero_out_crit(df):
-            crit_5 = (df['Date'] > df['Broadcast Week']) & (df['Date'] >= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
-            crit_6 = (df['Date'] < df['Broadcast Week']) & (df['Date'] <= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
-            crit_7 = (df['Broadcast Week'] == df['next_drop_date']) & (df['Date'] < df['Broadcast Week'])
+        # Define Chartable Pandas SQL
+        chartable_code = '''
 
-            return [crit_5,crit_6,crit_7]
+        SELECT
+            a."Podcast/Station: Account Name",
+            a."Host/Show",
+            a."Network",
+            a."Format",
+            a.Code,
+            a."MF Split",
+            a.Age,
+            a.Day,
+            a."Content Type",
+            a.Chartable,
+            a."Placement Type",
+            a.Product,
+            a.Audience,
+            a."Number of Slots",
+            a."Gross Spot Rate",
+            a."Gross CPM",
+            a.Price,
+            DATE(a.Date) AS "Date",
+            a."Core/Test",
+            a.Markets,
+            a."Opportunity Name",
+            a."Percent Male",
+            a."Percent Female",
+            DATE(a.next_drop_date) AS next_drop_date,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
+            SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
+            
+        FROM rebuilt_budget_df a
+            LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
+            
+        WHERE 
+            (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
+            (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
+            (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
+            (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
+            (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
+            
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
 
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Unique Households'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Unique Households'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Unique Visitors'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Unique Visitors'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed purchase'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated purchase'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Conversions'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Conversions'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Impressions'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Reach'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Revenue'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Revenue'] = None
+        '''.format(cutoff_date=cutoff_date)
 
-
-
-        chartable_final_df = reduce_df(chartable_final_df,'Ad Campaign Name','Date')
+        chartable_total_df = ps.sqldf(chartable_code,locals())
 
 
         st.write('')
@@ -464,88 +523,120 @@ elif sonic_im_client == 'Ten Thousand':
         st.write('')
 
         # Create download link for transactions file
-        chartable_csv = chartable_final_df.to_csv(index=False)
-        b64 = base64.b64encode(chartable_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        chartable_href = f'<a href="data:file/csv;base64,{b64}" download="chartable.csv">Download your Chartable CSV File</a> (right-click and save)'
-        st.markdown(chartable_href, unsafe_allow_html=True)
+        chartable_csv = chartable_total_df.to_csv(index=False)
+        st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
 
 
-elif sonic_im_client == 'Chartable Baseline':
+elif sonic_im_client == 'Other':
 
-    st.header('Chartable Baseline - File Processor')
+    st.header('Sonic File Processor')
     st.subheader('File Upload')
-    st.write("1. Upload the client's budget and chartable files using the widgets below")
-    st.write('2. Select a cutoff date')
-    cutoff_date = st.date_input(label='',value=datetime.today().date())
+
+    st.write('1. Upload the complete budget from Salesforce')
+    uploaded_daily_budget = st.file_uploader(label='',accept_multiple_files=False)
+
     st.write('')
     st.write('')
-    st.write("The output will be a file which can be downloaded and used to update the client's baseline Tableau dashboard.")
-    st.write('')
-    st.write('')
-
-
-
-    uploaded_daily_budget = st.file_uploader(label='Client Budget',accept_multiple_files=False)
-
-    uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
-
-     ### Create Data Frames ###
-    if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+    if uploaded_daily_budget is not None:
+        st.write('2. Select the client you want to process')
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
-        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+        client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
 
-    
-
-    if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
-
-
-        ## Daily Budget Processing ##
-        daily_budget_df = daily_budget_df.sort_values(by=['Podcast/Station: Account Name','Date'])
-        daily_budget_df['Broadcast Week'] = daily_budget_df['Date'].apply(lambda x: x.date())
-        daily_budget_df.drop(labels=['Date'],axis=1,inplace=True)
-        daily_budget_df['Percent Male'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[0].split()[1]) / 100)
-        daily_budget_df['Percent Female'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[1].split()[1]) / 100)
-
-        # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df,show_series_name='Podcast/Station: Account Name')
-
-
-        ## Creation of final files ##
-        chartable_final_df = pd.merge(rebuilt_budget_df, chartable_df, left_on=['Podcast/Station: Account Name'], right_on=['Ad Campaign Name'], how='left')
-
-
-        ## Reduce rows and group records ##
-        def zero_out_crit(df):
-            crit_5 = (df['Date'] > df['Broadcast Week']) & (df['Date'] >= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
-            crit_6 = (df['Date'] < df['Broadcast Week']) & (df['Date'] <= df['next_drop_date']) & (df['Broadcast Week'] != df['next_drop_date'])
-            crit_7 = (df['Broadcast Week'] == df['next_drop_date']) & (df['Date'] < df['Broadcast Week'])
-
-            return [crit_5,crit_6,crit_7]
-
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed Unique Visitors'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated Unique Visitors'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Impressions'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Reach'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Confirmed lead'] = None
-        chartable_final_df.loc[zero_out_crit(chartable_final_df)[0] | zero_out_crit(chartable_final_df)[1] | zero_out_crit(chartable_final_df)[2],'Estimated lead'] = None
-
-
-
-        chartable_final_df = reduce_df(chartable_final_df,'Ad Campaign Name','Date')
+        st.write('')
+        st.write('')
+        st.write("3. Upload the client's Chartable data")
+        uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
 
 
         st.write('')
         st.write('')
+        st.write('4. Select a cutoff date')
+        cutoff_date = st.date_input(label='',value=datetime.today().date())
+
+
+        # Create base Chartable dataframe
+        if uploaded_chartable_data is not None:
+            chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+
+
+            ## Daily Budget Processing ##
+            daily_budget_df = daily_budget_df[daily_budget_df['Account Name: Account Name'] == client].sort_values(by=['Podcast/Station: Account Name','Date'])
+            daily_budget_df['Percent Male'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
+            daily_budget_df['Percent Female'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
+
+
+            # Rebuild budget
+            rebuilt_budget_df = rebuild_budget(daily_budget_df,date_series_name='Date',show_series_name='Podcast/Station: Account Name')
+
+
+            # Aggregate Chartable data
+            chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum().reset_index()
+
+
+            # Define Chartable Pandas SQL
+            chartable_code = '''
+
+            SELECT
+                a."Podcast/Station: Account Name",
+                a."Host/Show",
+                a."Network",
+                a."Format",
+                a.Code,
+                a."MF Split",
+                a.Age,
+                a.Day,
+                a."Content Type",
+                a.Chartable,
+                a."Placement Type",
+                a.Product,
+                a.Audience,
+                a."Number of Slots",
+                a."Gross Spot Rate",
+                a."Gross CPM",
+                a.Price,
+                DATE(a.Date) AS "Date",
+                a."Core/Test",
+                a.Markets,
+                a."Opportunity Name",
+                a."Percent Male",
+                a."Percent Female",
+                DATE(a.next_drop_date) AS next_drop_date,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
+                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
+                
+            FROM rebuilt_budget_df a
+                LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
+                
+            WHERE 
+                (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
+                (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
+                (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
+                (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
+                (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
+                
+            GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+
+            '''.format(cutoff_date=cutoff_date)
+
+            chartable_total_df = ps.sqldf(chartable_code,locals())
+
+
+            st.write('')
+            st.write('')
 
 
 
-        ### OUTPUT ###
-        st.subheader('Data Source Output')
-        st.write('')
-        st.write('')
+            ### OUTPUT ###
+            st.subheader('Data Source Output')
+            st.write('')
+            st.write('')
 
-        # Create download link for transactions file
-        chartable_csv = chartable_final_df.to_csv(index=False)
-        b64 = base64.b64encode(chartable_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-        chartable_href = f'<a href="data:file/csv;base64,{b64}" download="chartable.csv">Download your Chartable CSV File</a> (right-click and save)'
-        st.markdown(chartable_href, unsafe_allow_html=True)
+            # Create download link for transactions file
+            chartable_csv = chartable_total_df.to_csv(index=False)
+            st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
