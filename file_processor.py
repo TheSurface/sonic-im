@@ -473,6 +473,7 @@ elif sonic_im_client == 'Ten Thousand':
             a."Content Type",
             a.Chartable,
             a."Placement Type",
+            a.Placement,
             a.Product,
             a.Audience,
             a."Number of Slots",
@@ -481,7 +482,6 @@ elif sonic_im_client == 'Ten Thousand':
             a.Price,
             DATE(a.Date) AS "Date",
             a."Core/Test",
-            a.Markets,
             a."Opportunity Name",
             a."Percent Male",
             a."Percent Female",
@@ -541,6 +541,7 @@ elif sonic_im_client == 'Other':
         st.write('2. Select the client you want to process')
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
         client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
+        client_type = st.selectbox(label='',options=['Leads Only','Orders Only','All'])
 
         st.write('')
         st.write('')
@@ -574,55 +575,162 @@ elif sonic_im_client == 'Other':
 
 
             # Define Chartable Pandas SQL
-            chartable_code = '''
+            if client_type == 'Orders Only':
 
-            SELECT
-                a."Podcast/Station: Account Name",
-                a."Host/Show",
-                a."Network",
-                a."Format",
-                a.Code,
-                a."MF Split",
-                a.Age,
-                a.Day,
-                a."Content Type",
-                a.Chartable,
-                a."Placement Type",
-                a.Product,
-                a.Audience,
-                a."Number of Slots",
-                a."Gross Spot Rate",
-                a."Gross CPM",
-                a.Price,
-                DATE(a.Date) AS "Date",
-                a."Core/Test",
-                a.Markets,
-                a."Opportunity Name",
-                a."Percent Male",
-                a."Percent Female",
-                DATE(a.next_drop_date) AS next_drop_date,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
-                SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
-                
-            FROM rebuilt_budget_df a
-                LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
-                
-            WHERE 
-                (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
-                (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-                (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
-                (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
-                (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
-                
-            GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+                chartable_code = '''
 
-            '''.format(cutoff_date=cutoff_date)
+                SELECT
+                    a."Podcast/Station: Account Name",
+                    a."Host/Show",
+                    a."Network",
+                    a."Format",
+                    a.Code,
+                    a."MF Split",
+                    a.Age,
+                    a.Day,
+                    a."Content Type",
+                    a.Chartable,
+                    a."Placement Type",
+                    a.Placement,
+                    a.Product,
+                    a.Audience,
+                    a."Number of Slots",
+                    a."Gross Spot Rate",
+                    a."Gross CPM",
+                    a.Price,
+                    DATE(a.Date) AS "Date",
+                    a."Core/Test",
+                    a."Opportunity Name",
+                    a."Percent Male",
+                    a."Percent Female",
+                    DATE(a.next_drop_date) AS next_drop_date,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
+                    
+                FROM rebuilt_budget_df a
+                    LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
+                    
+                WHERE 
+                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
+                    (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
+                    (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
+                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
+                    (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
+                    
+                GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+
+                '''.format(cutoff_date=cutoff_date)
+
+            elif client_type == 'Leads Only':
+
+                chartable_code = '''
+
+                SELECT
+                    a."Podcast/Station: Account Name",
+                    a."Host/Show",
+                    a."Network",
+                    a."Format",
+                    a.Code,
+                    a."MF Split",
+                    a.Age,
+                    a.Day,
+                    a."Content Type",
+                    a.Chartable,
+                    a."Placement Type",
+                    a.Placement,
+                    a.Product,
+                    a.Audience,
+                    a."Number of Slots",
+                    a."Gross Spot Rate",
+                    a."Gross CPM",
+                    a.Price,
+                    DATE(a.Date) AS "Date",
+                    a."Core/Test",
+                    a."Opportunity Name",
+                    a."Percent Male",
+                    a."Percent Female",
+                    DATE(a.next_drop_date) AS next_drop_date,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
+
+                    
+                FROM rebuilt_budget_df a
+                    LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
+                    
+                WHERE 
+                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
+                    (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
+                    (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
+                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
+                    (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
+                    
+                GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+
+                '''.format(cutoff_date=cutoff_date)
+            
+            else:
+
+                chartable_code = '''
+
+                SELECT
+                    a."Podcast/Station: Account Name",
+                    a."Host/Show",
+                    a."Network",
+                    a."Format",
+                    a.Code,
+                    a."MF Split",
+                    a.Age,
+                    a.Day,
+                    a."Content Type",
+                    a.Chartable,
+                    a."Placement Type",
+                    a.Placement,
+                    a.Product,
+                    a.Audience,
+                    a."Number of Slots",
+                    a."Gross Spot Rate",
+                    a."Gross CPM",
+                    a.Price,
+                    DATE(a.Date) AS "Date",
+                    a."Core/Test",
+                    a."Opportunity Name",
+                    a."Percent Male",
+                    a."Percent Female",
+                    DATE(a.next_drop_date) AS next_drop_date,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
+                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
+                    
+                FROM rebuilt_budget_df a
+                    LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
+                    
+                WHERE 
+                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
+                    (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
+                    (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
+                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
+                    (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
+                    
+                GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+
+                '''.format(cutoff_date=cutoff_date)
 
             chartable_total_df = ps.sqldf(chartable_code,locals())
 
