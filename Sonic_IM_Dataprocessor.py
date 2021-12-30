@@ -814,7 +814,7 @@ elif sonic_im_client == 'Justworks':
         st.write('2. Select the client you want to process')
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
         client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
-        client_type = st.selectbox(label='',options=['Leads Only'])
+        client_type = st.selectbox(label='',options=['Leads Only','Orders Only','All'])
 
         st.write('')
         st.write('')
@@ -868,6 +868,7 @@ elif sonic_im_client == 'Justworks':
                     a.Audience,
                     a."Number of Slots",
                     a."Net Rate per Spot",
+                    a."Gross Spot Rate",
                     a."Gross CPM",
                     a.Price,
                     DATE(a.Date) AS "Date",
@@ -918,6 +919,7 @@ elif sonic_im_client == 'Justworks':
                     a.Audience,
                     a."Number of Slots",
                     a."Net Rate per Spot",
+                    a."Gross Spot Rate",
                     a."Gross CPM",
                     a.Price,
                     DATE(a.Date) AS "Date",
@@ -966,6 +968,7 @@ elif sonic_im_client == 'Justworks':
                     a.Audience,
                     a."Number of Slots",
                     a."Net Rate per Spot",
+                    a."Gross Spot Rate",
                     a."Gross CPM",
                     a.Price,
                     DATE(a.Date) AS "Date",
