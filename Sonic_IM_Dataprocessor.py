@@ -837,7 +837,7 @@ elif sonic_im_client == 'Justworks':
             daily_budget_df = daily_budget_df[daily_budget_df['Account Name: Account Name'] == client].sort_values(by=['Podcast/Station: Account Name','Date'])
             daily_budget_df['Percent Male'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
             daily_budget_df['Percent Female'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
-            daily_budget_df['Net Rate per Spot'] = daily_budget_df['Net Rate Spot'].astype(str).apply(lambda x: x.split()[1]) 
+            daily_budget_df['Net Rate per Spot'] = daily_budget_df['Net Rate Spot'].str.split(" ", n=1, expand = True) 
 
 
             # Rebuild budget
