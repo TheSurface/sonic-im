@@ -838,6 +838,7 @@ elif sonic_im_client == 'Justworks':
             daily_budget_df['Percent Male'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
             daily_budget_df['Percent Female'] = daily_budget_df['MF Split'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
             daily_budget_df['Net Rate per Spot'] = daily_budget_df['Net Rate per Spot'].str.split(" ").str[1] 
+            daily_budget_df['Audience'] = pd.to_numeric(daily_budget_df['Audience'])
 
 
             # Rebuild budget
@@ -866,7 +867,7 @@ elif sonic_im_client == 'Justworks':
                     a."Placement Type",
                     a.Placement,
                     a.Product,
-                    NUMBER(a.Audience) AS "Audience",
+                    a.Audience,
                     a."Number of Slots",
                     a."Net Rate per Spot",
                     a."Gross Spot Rate",
@@ -917,7 +918,7 @@ elif sonic_im_client == 'Justworks':
                     a."Placement Type",
                     a.Placement,
                     a.Product,
-                    NUMBER(a.Audience) AS "Audience",
+                    a.Audience,
                     a."Number of Slots",
                     a."Net Rate per Spot",
                     a."Gross Spot Rate",
@@ -966,7 +967,7 @@ elif sonic_im_client == 'Justworks':
                     a."Placement Type",
                     a.Placement,
                     a.Product,
-                    NUMBER(a.Audience) AS "Audience",
+                    a.Audience,
                     a."Number of Slots",
                     a."Net Rate per Spot",
                     a."Gross Spot Rate",
