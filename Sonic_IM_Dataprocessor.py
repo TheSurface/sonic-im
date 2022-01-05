@@ -286,7 +286,7 @@ if sonic_im_client == 'Keeps':
 
 
         # Create calendar dataframe for cross join
-        df_calendar = pd.Series(pd.date_range(start='2020-01-01',end='2021-12-31',freq='M')).reset_index()
+        df_calendar = pd.Series(pd.date_range(start='2020-01-01',end='2022-12-31',freq='M')).reset_index()
         df_calendar.rename({0:'date'},inplace=True,axis=1)
         df_calendar.drop(labels='index',axis=1,inplace=True)
         df_calendar['date'] = df_calendar['date'].apply(lambda x: truncate(x,'month'))
@@ -581,6 +581,7 @@ elif sonic_im_client == 'Cerebral':
         # Create columns for percent of show's audience that is male and female
         daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
         daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
+        
 
 
         # Rebuild budget
@@ -743,7 +744,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Create calendar dataframe for cross join
-        df_calendar = pd.Series(pd.date_range(start='2020-01-01',end='2021-12-31',freq='M')).reset_index()
+        df_calendar = pd.Series(pd.date_range(start='2020-01-01',end='2022-12-31',freq='M')).reset_index()
         df_calendar.rename({0:'date'},inplace=True,axis=1)
         df_calendar.drop(labels='index',axis=1,inplace=True)
         df_calendar['date'] = df_calendar['date'].apply(lambda x: truncate(x,'month'))
