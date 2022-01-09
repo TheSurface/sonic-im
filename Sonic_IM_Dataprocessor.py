@@ -614,11 +614,39 @@ elif sonic_im_client == 'Cerebral':
         '''.format(cutoff_date=cutoff_date)
 
         chartable_total_df = ps.sqldf(chartable_code,locals())
+        
+        
+        # Create the final output file
+        output_df = ['Show Name','Host Name','Network','Chartable Tracking','Genre','Media Age','Content Type','Core/Test','Placement','Format','Personally Endorsed','Downloads','Client Rate','Broadcast Week','Actual Drop Day','Percent Male','Percent Female','next_drop_date'],how='inner')
+
+
+    ### VIEWS: Monthly Calendar View ###
+        df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
+        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['Show Name','budget_spend_month']).sum()[['Client Rate']].reset_index()
+
+
+
+        # Create calendar dataframe for cross join
+        df_calendar = pd.Series(pd.date_range(start='2020-01-01',end='2022-12-31',freq='M')).reset_index()
+        df_calendar.rename({0:'date'},inplace=True,axis=1)
+        df_calendar.drop(labels='index',axis=1,inplace=True)
+        df_calendar['date'] = df_calendar['date'].apply(lambda x: truncate(x,'month'))
+        df_calendar['key'] = 1
+
+
+        
+        # Combine base and budget dataframes
+        df_base_budget = pd.merge(df_base, df_budget_grouped, how='left', left_on=['date'], right_on=['budget_spend_month'])
+        df_base_budget['Client Rate'].fillna(0,inplace=True)
+
+
+
+        # Create monthly output file
+        df_output_monthly = pd.concat([df_leads_monthly_cal,df_purchases_monthly_cal])
 
 
         st.write('')
         st.write('')
-
 
 
         ### OUTPUT ###
@@ -626,9 +654,17 @@ elif sonic_im_client == 'Cerebral':
         st.write('')
         st.write('')
 
-        # Create download link for transactions file
-        chartable_csv = chartable_total_df.to_csv(index=False)
-        st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
+        # Create download link for Performance Summary, Looker vs. Chartable, and Chartable-Looker Combined views file
+        output_csv = output_df.to_csv(index=False)
+        b64 = base64.b64encode(output_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+        output_href = f'<a href="data:file/csv;base64,{b64}" download="output.csv">Download your Output CSV File</a>'
+        st.markdown(output_href, unsafe_allow_html=True)
+
+        # Create download link for Performance Summary, Looker vs. Chartable, and Chartable-Looker Combined views file
+        monthly_output_csv = df_output_monthly.to_csv(index=False)
+        b64 = base64.b64encode(monthly_output_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+        monthly_output_href = f'<a href="data:file/csv;base64,{b64}" download="monthly_output.csv">Download your Monthly Output CSV File</a>'
+        st.markdown(monthly_output_href, unsafe_allow_html=True)
         
         
 		
