@@ -733,22 +733,22 @@ elif sonic_im_client == 'Cerebral':
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
                 '''.format(cutoff_date=cutoff_date)
 
-            chartable_total_df = ps.sqldf(chartable_code,locals())
+    chartable_total_df = ps.sqldf(chartable_code,locals())
 
 
-            st.write('')
-            st.write('')
+    st.write('')
+    st.write('')
 
 
 
-            ### OUTPUT ###
-            st.subheader('Data Source Output')
-            st.write('')
-            st.write('')
+    ### OUTPUT ###
+    st.subheader('Data Source Output')
+    st.write('')
+    st.write('')
 
-            # Create download link for transactions file
-            chartable_csv = chartable_total_df.to_csv(index=False)
-            st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
+    # Create download link for transactions file
+    chartable_csv = chartable_total_df.to_csv(index=False)
+    st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
         
         
 		
