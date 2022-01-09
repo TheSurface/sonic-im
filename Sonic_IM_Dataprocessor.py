@@ -551,7 +551,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         ### Create Data Frames ###
-        if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+        if (uploaded_chartable_data is not None):
             daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
             chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
