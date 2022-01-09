@@ -522,232 +522,115 @@ elif sonic_im_client == 'Ten Thousand':
 
 elif sonic_im_client == 'Cerebral':
 
-    st.header('Sonic File Processor')
+    st.header('Cerebral File Processor')
     st.subheader('File Upload')
-
-    st.write('1. Upload the complete budget from Salesforce')
-    uploaded_daily_budget = st.file_uploader(label='',accept_multiple_files=False)
-
+    st.write('1. Upload the following four files (Cerebral Budget, Chartable Data) using the widgets below')
+    st.write('2. Select a cutoff date')
+    cutoff_date = st.date_input(label='',value=datetime.today().date())
     st.write('')
     st.write('')
-    if uploaded_daily_budget is not None:
-        st.write('2. Select the client you want to process')
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
-        client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
-        client_type = st.selectbox(label='',options=['Leads Only','Orders Only','All'])
-
-        st.write('')
-        st.write('')
-        st.write("3. Upload the client's Chartable data")
-        uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
+    st.write('The output will be a file which can be downloaded and used to update the Keeps Tableau dashboard.')
+    st.write('')
+    st.write('')
 
 
-        st.write('')
-        st.write('')
-        st.write('4. Select a cutoff date')
-        cutoff_date = st.date_input(label='',value=datetime.today().date())
+    # Construct user interface
+    uploaded_daily_budget = st.file_uploader(label='Keeps Budget',accept_multiple_files=False)
+    uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
 
 
-        # Create base Chartable dataframe
-        if uploaded_chartable_data is not None:
-            chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+    if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
+        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
+
+        df_budget = daily_budget_df
+
             
-             ## Daily Budget Processing ##
-            daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
-            chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
-
-            daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
-            daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-            daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-
-            df_budget = daily_budget_df
 
 
-            ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
-            # Create DataFrames from uploaded CSV files
-            daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+        ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
+        # Create DataFrames from uploaded CSV files
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
 
 
 
-            # Create columns for percent of show's audience that is male and female
-            daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
-            daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
+        # Create columns for percent of show's audience that is male and female
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
         
 
 
-            # Rebuild budget
-            rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
+        # Rebuild budget
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
 
 
 
 
-            # Aggregate Chartable Base File
-            chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum()[['Confirmed lead','Estimated lead','Confirmed purchase','Estimated purchase']].reset_index()
+        # Aggregate Chartable Base File
+        chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum()[['Confirmed lead','Estimated lead','Confirmed purchase','Estimated purchase']].reset_index()
 
 
-            # Define Chartable Pandas SQL
-            if client_type == 'Orders Only':
-
-                chartable_code = '''
-                SELECT
-                    a."Podcast/Station: Account Name",
-                    a."Host/Show",
-                    a."Network",
-                    a."Format",
-                    a.Code,
-                    a."MF Split",
-                    a.Age,
-                    a.Day,
-                    a."Content Type",
-                    a.Chartable,
-                    a."Placement Type",
-                    a.Placement,
-                    a.Product,
-                    a.Audience,
-                    a."Number of Slots",
-                    a."Net Rate per Spot",
-                    a."Gross Spot Rate",
-                    a."Gross CPM",
-                    a.Price,
-                    DATE(a.Date) AS "Date",
-                    a."Core/Test",
-                    a."Opportunity Name",
-                    a."Percent Male",
-                    a."Percent Female",
-                    DATE(a.next_drop_date) AS next_drop_date,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
-                    
-                FROM rebuilt_budget_df a
-                    LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
-                    
-                WHERE 
-                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
-                    (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-                    (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
-                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
-                    (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
-                    
-                GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
-                '''.format(cutoff_date=cutoff_date)
-
-            elif client_type == 'Leads Only':
-
-                chartable_code = '''
-                SELECT
-                    a."Podcast/Station: Account Name",
-                    a."Host/Show",
-                    a."Network",
-                    a."Format",
-                    a.Code,
-                    a."MF Split",
-                    a.Age,
-                    a.Day,
-                    a."Content Type",
-                    a.Chartable,
-                    a."Placement Type",
-                    a.Placement,
-                    a.Product,
-                    a.Audience,
-                    a."Number of Slots",
-                    a."Net Rate per Spot",
-                    a."Gross Spot Rate",
-                    a."Gross CPM",
-                    a.Price,
-                    DATE(a.Date) AS "Date",
-                    a."Core/Test",
-                    a."Opportunity Name",
-                    a."Percent Male",
-                    a."Percent Female",
-                    DATE(a.next_drop_date) AS next_drop_date,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
-                    SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
-                    
-                FROM rebuilt_budget_df a
-                    LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
-                    
-                WHERE 
-                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date < a.next_drop_date) OR
-                    (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-                    (a.Date <= "{cutoff_date}" AND b.Date IS NULL) OR
-                    (a.Date <= "{cutoff_date}" AND ((b.Date >= a.Date AND b.Date >= a.next_drop_date) OR 
-                    (b.Date <= a.Date AND b.Date <= a.next_drop_date)))
-                    
-                GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
-                '''.format(cutoff_date=cutoff_date)
-                
-                
-                # Define Chartable Pandas SQL
-                # Chartable #
- 
+        # Define Chartable Pandas SQL
+        # Chartable #
+        chartable_code = '''
+        SELECT
+            a."Show Name",
+            a."Host Name",
+            a."Network",
+            a."Chartable Tracking Y/N",
+            a.Genre,
+            a."Age Demo",
+            a."Ad Type",
+            a."Content Type",
+            a."Test/Core",
+            a.Placement,
+            a.Format,
+            a."Personally Endorsed",
+            a."Downloads",
+            a."Client Rate",
+            DATE(a."Broadcast Week") AS "Broadcast Week",
+            DATE(a."Actual Drop Day") AS "Actual Drop Day",
+            a."Percent Male",
+            a."Percent Female",
+            DATE(a.next_drop_date) AS next_drop_date,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS chartable_estimated_purchases,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS chartable_confirmed_purchases,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS chartable_estimated_leads,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS chartable_confirmed_leads
             
-            else:
-
-                chartable_code = '''
-                SELECT
-                    a."Show Name",
-                    a."Host Name",
-                    a."Network",
-                    a."Chartable Tracking Y/N",
-                    a.Genre,
-                    a."Age Demo",
-                    a."Ad Type",
-                    a."Content Type",
-                    a."Test/Core",
-                    a.Placement,
-                    a.Format,
-                    a."Personally Endorsed",
-                    a."Downloads",
-                    a."Client Rate",
-                    DATE(a."Broadcast Week") AS "Broadcast Week",
-                    DATE(a."Actual Drop Day") AS "Actual Drop Day",
-                    a."Percent Male",
-                    a."Percent Female",
-                    DATE(a.next_drop_date) AS next_drop_date,
-                    SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS chartable_estimated_purchases,
-                    SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS chartable_confirmed_purchases,
-                    SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS chartable_estimated_leads,
-                    SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS chartable_confirmed_leads
+        FROM rebuilt_budget_df a
+            LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
-                FROM rebuilt_budget_df a
-                    LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
+        WHERE 
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
+            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
+            (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
+            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
             
-                WHERE 
-                    (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
-                    (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-                    (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
-                    (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
-                    (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
-            
-                GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
-                '''.format(cutoff_date=cutoff_date)
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+        '''.format(cutoff_date=cutoff_date)
 
-            chartable_total_df = ps.sqldf(chartable_code,locals())
+        chartable_total_df = ps.sqldf(chartable_code,locals())
 
 
-            st.write('')
-            st.write('')
+        st.write('')
+        st.write('')
 
 
 
-            ### OUTPUT ###
-            st.subheader('Data Source Output')
-            st.write('')
-            st.write('')
+        ### OUTPUT ###
+        st.subheader('Data Source Output')
+        st.write('')
+        st.write('')
 
-            # Create download link for transactions file
-            chartable_csv = chartable_total_df.to_csv(index=False)
-            st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
+        # Create download link for transactions file
+        chartable_csv = chartable_total_df.to_csv(index=False)
+        st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
         
         
 		
@@ -763,6 +646,17 @@ elif sonic_im_client == 'Justworks':
     st.write('')
     if uploaded_daily_budget is not None:
         st.write('2. Select the client you want to process')
+        
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
+        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
+
+        df_budget = daily_budget_df
+        
+        
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
         client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
         client_type = st.selectbox(label='',options=['Leads Only','Orders Only','All'])
