@@ -616,9 +616,6 @@ elif sonic_im_client == 'Cerebral':
         chartable_total_df = ps.sqldf(chartable_code,locals())
         
         
-        # Create the final output file
-        output_df = ps.sqldf('Show Name','Host Name','Network','Chartable Tracking','Genre','Media Age','Content Type','Core/Test','Placement','Format','Personally Endorsed','Downloads','Client Rate','Broadcast Week','Actual Drop Day','Percent Male','Percent Female','next_drop_date')
-
 
     ### VIEWS: Monthly Calendar View ###
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
@@ -655,7 +652,7 @@ elif sonic_im_client == 'Cerebral':
         st.write('')
 
         # Create download link for Performance Summary, Looker vs. Chartable, and Chartable-Looker Combined views file
-        output_csv = output_df.to_csv(index=False)
+        output_csv = chartable_total_df.to_csv(index=False)
         b64 = base64.b64encode(output_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
         output_href = f'<a href="data:file/csv;base64,{b64}" download="output.csv">Download your Output CSV File</a>'
         st.markdown(output_href, unsafe_allow_html=True)
