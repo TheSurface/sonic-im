@@ -580,7 +580,7 @@ elif sonic_im_client == 'Cerebral':
             a."Show Name",
             a."Host Name",
             a."Network",
-            a."Chartable Tracking Y/N",
+            a."Chartable Tracking",
             a.Genre,
             a."Age Demo",
             a."Ad Type",
