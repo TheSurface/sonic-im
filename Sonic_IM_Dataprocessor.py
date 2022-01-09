@@ -631,6 +631,9 @@ elif sonic_im_client == 'Cerebral':
         df_calendar['key'] = 1
 
 
+        # Combine calendar and UTM dataframes
+        df_base = (df_calendar)
+
         
         # Combine base and budget dataframes
         df_base_budget = pd.merge(df_base, df_budget_grouped, how='left', left_on=['date'], right_on=['budget_spend_month'])
