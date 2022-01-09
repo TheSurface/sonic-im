@@ -525,7 +525,7 @@ elif sonic_im_client == 'Cerebral':
     st.header('Sonic File Processor')
     st.subheader('File Upload')
 
-    st.write('1. Upload the Cerebral Budget')
+    st.write('1. Upload the complete budget from Salesforce')
     uploaded_daily_budget = st.file_uploader(label='',accept_multiple_files=False)
 
     st.write('')
@@ -548,10 +548,11 @@ elif sonic_im_client == 'Cerebral':
         cutoff_date = st.date_input(label='',value=datetime.today().date())
 
 
-
-
-        ### Create Data Frames ###
-        if (uploaded_chartable_data is not None):
+        # Create base Chartable dataframe
+        if uploaded_chartable_data is not None:
+            chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+            
+             ## Daily Budget Processing ##
             daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
             chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
