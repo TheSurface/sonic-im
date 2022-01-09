@@ -642,7 +642,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Create monthly output file
-        df_output_monthly = pd.concat([df_leads_monthly_cal,df_purchases_monthly_cal])
+        df_output_monthly = (df_base_budget)
 
 
         st.write('')
