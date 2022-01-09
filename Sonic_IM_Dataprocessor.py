@@ -550,44 +550,42 @@ elif sonic_im_client == 'Cerebral':
 
 
 
-    ### Create Data Frames ###
-    if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
-        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+        ### Create Data Frames ###
+        if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
+            daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+            chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
+            daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
+            daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
+            daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
 
-        df_budget = daily_budget_df
-        df_leads = looker_file_leads_df
-        df_purchases = looker_file_purchases_df
+            df_budget = daily_budget_df
 
 
-    ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
-        # Create DataFrames from uploaded CSV files
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+            ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
+            # Create DataFrames from uploaded CSV files
+            daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
 
 
 
-        # Create columns for percent of show's audience that is male and female
-        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
+            # Create columns for percent of show's audience that is male and female
+            daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
+            daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
         
 
 
-        # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
+            # Rebuild budget
+            rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
 
 
 
 
-        # Aggregate Chartable Base File
-        chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum()[['Confirmed lead','Estimated lead','Confirmed purchase','Estimated purchase']].reset_index()
+            # Aggregate Chartable Base File
+            chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum()[['Confirmed lead','Estimated lead','Confirmed purchase','Estimated purchase']].reset_index()
 
 
-    # Define Chartable Pandas SQL
-    if client_type == 'Orders Only':
+            # Define Chartable Pandas SQL
+            if client_type == 'Orders Only':
 
                 chartable_code = '''
                 SELECT
@@ -638,7 +636,7 @@ elif sonic_im_client == 'Cerebral':
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
                 '''.format(cutoff_date=cutoff_date)
 
-    elif client_type == 'Leads Only':
+            elif client_type == 'Leads Only':
 
                 chartable_code = '''
                 SELECT
@@ -688,11 +686,11 @@ elif sonic_im_client == 'Cerebral':
                 '''.format(cutoff_date=cutoff_date)
                 
                 
-        # Define Chartable Pandas SQL
-        # Chartable #
+                # Define Chartable Pandas SQL
+                # Chartable #
  
             
-    else:
+            else:
 
                 chartable_code = '''
                 SELECT
@@ -733,22 +731,22 @@ elif sonic_im_client == 'Cerebral':
                 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
                 '''.format(cutoff_date=cutoff_date)
 
-    chartable_total_df = ps.sqldf(chartable_code,locals())
+            chartable_total_df = ps.sqldf(chartable_code,locals())
 
 
-    st.write('')
-    st.write('')
+            st.write('')
+            st.write('')
 
 
 
-    ### OUTPUT ###
-    st.subheader('Data Source Output')
-    st.write('')
-    st.write('')
+            ### OUTPUT ###
+            st.subheader('Data Source Output')
+            st.write('')
+            st.write('')
 
-    # Create download link for transactions file
-    chartable_csv = chartable_total_df.to_csv(index=False)
-    st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
+            # Create download link for transactions file
+            chartable_csv = chartable_total_df.to_csv(index=False)
+            st.download_button(label='Download Chartable Data',data=chartable_csv,file_name='chartable.csv',mime='text/csv')
         
         
 		
