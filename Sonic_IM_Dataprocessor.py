@@ -544,7 +544,7 @@ elif sonic_im_client == 'Cerebral':
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: int(x))
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
 
         df_budget = daily_budget_df
@@ -558,8 +558,8 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Aggregate purchase and lead data by date and show name
-        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
         
 
 
