@@ -548,8 +548,7 @@ elif sonic_im_client == 'Cerebral':
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
 
         df_budget = daily_budget_df
-        df_leads = looker_file_leads_df
-        df_purchases = looker_file_purchases_df
+        
 
 
     ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
