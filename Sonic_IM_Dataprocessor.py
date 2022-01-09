@@ -692,7 +692,7 @@ elif sonic_im_client == 'Cerebral':
         # Chartable #
  
             
-            else:
+    else:
 
                 chartable_code = '''
                 SELECT
