@@ -522,7 +522,7 @@ elif sonic_im_client == 'Ten Thousand':
 
 elif sonic_im_client == 'Cerebral':
 
-  st.header('Sonic File Processor')
+    st.header('Sonic File Processor')
     st.subheader('File Upload')
 
     st.write('1. Upload the Cerebral Budget')
