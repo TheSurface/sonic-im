@@ -617,7 +617,7 @@ elif sonic_im_client == 'Cerebral':
         
         
         # Create the final output file
-        output_df = ['Show Name','Host Name','Network','Chartable Tracking','Genre','Media Age','Content Type','Core/Test','Placement','Format','Personally Endorsed','Downloads','Client Rate','Broadcast Week','Actual Drop Day','Percent Male','Percent Female','next_drop_date'],how='inner')
+        output_df = ps.sqldf('Show Name','Host Name','Network','Chartable Tracking','Genre','Media Age','Content Type','Core/Test','Placement','Format','Personally Endorsed','Downloads','Client Rate','Broadcast Week','Actual Drop Day','Percent Male','Percent Female','next_drop_date')
 
 
     ### VIEWS: Monthly Calendar View ###
