@@ -559,8 +559,8 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Create columns for percent of show's audience that is male and female
-        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
-        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
+        daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].strip('M'))/100)
+        daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].strip('F'))/100)
         
 
 
