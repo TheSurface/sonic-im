@@ -595,7 +595,6 @@ elif sonic_im_client == 'Cerebral':
             a."Percent Male",
             a."Percent Female",
             DATE(a.next_drop_date) AS next_drop_date,
-            a."Net Rate per Spot",
             a."Gross Spot Rate 15%",
             a."Gross CPM 15%",
             DATE(a.Date) AS "Date",
