@@ -594,12 +594,12 @@ elif sonic_im_client == 'Cerebral':
             DATE(a."Actual Drop Day") AS "Actual Drop Day",
             a."Percent Male",
             a."Percent Female",
-            DATE(a.next_drop_date) AS next_drop_date,
             a."Gross Spot Rate 15%",
             a."Gross CPM 15%",
             DATE(a.Actual Drop Day) AS "Date",
             a."Core/Test",
             a."Opportunity Name",  
+            DATE(a.next_drop_date) AS next_drop_date,
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
@@ -621,7 +621,7 @@ elif sonic_im_client == 'Cerebral':
             (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
             (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
             
-        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
         '''.format(cutoff_date=cutoff_date)
 
         chartable_total_df = ps.sqldf(chartable_code,locals())
