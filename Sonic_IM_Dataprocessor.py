@@ -599,7 +599,7 @@ elif sonic_im_client == 'Cerebral':
             a."Core/Test",
             a."Opportunity Name",  
             DATE(a.next_drop_date) AS next_drop_date,
-            DATE(a.Actual Drop Day) AS "Date",
+            DATE(a."Actual Drop Day") AS "Date",
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
