@@ -529,13 +529,13 @@ elif sonic_im_client == 'Cerebral':
     cutoff_date = st.date_input(label='',value=datetime.today().date())
     st.write('')
     st.write('')
-    st.write('The output will be a file which can be downloaded and used to update the Keeps Tableau dashboard.')
+    st.write('The output will be a file which can be downloaded and used to update the Cerebral Tableau dashboard.')
     st.write('')
     st.write('')
 
 
     # Construct user interface
-    uploaded_daily_budget = st.file_uploader(label='Keeps Budget',accept_multiple_files=False)
+    uploaded_daily_budget = st.file_uploader(label='Cerebral Budget',accept_multiple_files=False)
     uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
 
 
@@ -621,7 +621,7 @@ elif sonic_im_client == 'Cerebral':
             (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
             (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
             
-        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
         '''.format(cutoff_date=cutoff_date)
 
         chartable_total_df = ps.sqldf(chartable_code,locals())
