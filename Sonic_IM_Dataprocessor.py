@@ -570,7 +570,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Aggregate Chartable Base File
-        chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum()[['Confirmed lead','Estimated lead','Confirmed purchase','Estimated purchase']].reset_index()
+        chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum().reset_index()
 
 
         # Define Chartable Pandas SQL
