@@ -543,7 +543,7 @@ elif sonic_im_client == 'Cerebral':
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',',''))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
 
