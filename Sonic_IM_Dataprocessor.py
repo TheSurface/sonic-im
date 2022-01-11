@@ -657,7 +657,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Create lead and purchase calendar dataframes
-        df_final_output = pd.merge(df_base_budget, df_budget[['event_date','created_week','created_month','Show Name']],on='Show Name')
+        df_final_output = pd.merge(df_base_budget, df_budget[['event_date','created_week','created_month']],how='left',left_on=['date'],right_on=['created_month'])
       
 
 
