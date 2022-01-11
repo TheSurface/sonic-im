@@ -641,11 +641,17 @@ elif sonic_im_client == 'Cerebral':
         df_calendar.rename({0:'date'},inplace=True,axis=1)
         df_calendar.drop(labels='index',axis=1,inplace=True)
         df_calendar['date'] = df_calendar['date'].apply(lambda x: truncate(x,'month'))
-        df_calendar['key'] = 1
+        df_calendar['Show Name'] = df_budget['Show Name']
+
+
+
+        # Create dates dataframe
+        df_dates = df_budget['budget_spend_month', 'created_month', 'created_week', 'Show Name']
 
 
         # Combine calendar and UTM dataframes
-        df_base = (df_calendar)
+        df_base = pd.merge(df_calendar, df_dates, on =['Show Name'])
+
 
         
         # Combine base and budget dataframes
