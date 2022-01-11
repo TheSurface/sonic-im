@@ -681,7 +681,7 @@ elif sonic_im_client == 'Cerebral':
 elif sonic_im_client == 'Justworks':
 
 
-  st.header('Sonic File Processor')
+    st.header('Sonic File Processor')
     st.subheader('File Upload')
 
     st.write('1. Upload the complete budget from Salesforce')
