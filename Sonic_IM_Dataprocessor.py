@@ -652,12 +652,12 @@ elif sonic_im_client == 'Cerebral':
         
         # Combine base and budget dataframes
         df_base_budget = pd.merge(df_base, df_budget_grouped, how='left', left_on=['date','Show Name'], right_on=['budget_spend_month','Show Name'])
-        
+        df_base_budget['Client Rate'].fillna(0,inplace=True)
 
 
 
         # Create lead and purchase calendar dataframes
-        df_final_output = pd.merge(df_base_budget, df_budget[['event_date','created_week','created_month','Show Name']],on=['Show Name'])
+        df_final_output = pd.merge(df_base_budget, df_budget[['event_date','created_week','created_month','Show Name']],how='left',left_on=['date'],right_on=['created_month'])
        
 
 
