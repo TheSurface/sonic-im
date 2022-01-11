@@ -629,7 +629,7 @@ elif sonic_im_client == 'Cerebral':
 
     ### VIEWS: Monthly Calendar View ###
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
-        df_budget['created_month'] = df_leads['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
+        df_budget['created_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_week'] = df_budget['Broadcast Week'].apply(lambda x: truncate(x,'week'))
         df_budget_grouped = df_budget[df_budget['Actual Drop Day'] <= cutoff_date].groupby(['Show Name','budget_spend_month']).sum()[['Client Rate']].reset_index()
         df_budget.rename({'Actual Drop Day':'event_date'},axis=1,inplace=True)
