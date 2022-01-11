@@ -651,7 +651,7 @@ elif sonic_im_client == 'Cerebral':
 
         
         # Combine base and budget dataframes
-        df_base_budget = pd.merge(df_base, df_budget_grouped, 'Show Name'], on=['Actual Drop Day','Show Name'])
+        df_base_budget = pd.merge(df_base, df_budget_grouped, on=['Actual Drop Day','Show Name'])
         df_base_budget['Client Rate'].fillna(0,inplace=True)
 
 
