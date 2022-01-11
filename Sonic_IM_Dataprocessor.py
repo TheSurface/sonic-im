@@ -641,27 +641,29 @@ elif sonic_im_client == 'Cerebral':
         df_calendar.rename({0:'date'},inplace=True,axis=1)
         df_calendar.drop(labels='index',axis=1,inplace=True)
         df_calendar['date'] = df_calendar['date'].apply(lambda x: truncate(x,'month'))
-        df_calendar['Show Name'] = df_budget['Show Name']
-
-
-
-        # Create dates dataframe
-        df_dates = df_budget['budget_spend_month', 'created_month', 'created_week', 'Show Name']
+        df_calendar['key'] = 1
 
 
         # Combine calendar and UTM dataframes
-        df_base = pd.merge(df_calendar, df_dates, on =['Show Name'])
+        df_base = (df_calendar)
+
 
 
         
         # Combine base and budget dataframes
-        df_base_budget = pd.merge(df_base, df_budget_grouped, how='left', left_on=['date'], right_on=['budget_spend_month'])
+        df_base_budget = pd.merge(df_base, df_budget_grouped, how='left', left_on=['date','Show Name'], right_on=['budget_spend_month','Show Name'])
         df_base_budget['Client Rate'].fillna(0,inplace=True)
 
 
 
+        # Create lead and purchase calendar dataframes
+        df_final_output = pd.merge(df_base_budget, df_budget['event_date','created_week','created_month']],how='left',left_on=['date','Show Name'],right_on=['created_month','Show Name'])
+       
+
+
+
         # Create monthly output file
-        df_output_monthly = (df_base_budget)
+        df_output_monthly = (df_final_output)
 
 
         st.write('')
