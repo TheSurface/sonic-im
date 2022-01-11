@@ -641,7 +641,7 @@ elif sonic_im_client == 'Cerebral':
         df_calendar.rename({0:'date'},inplace=True,axis=1)
         df_calendar.drop(labels='index',axis=1,inplace=True)
         df_calendar['date'] = df_calendar['date'].apply(lambda x: truncate(x,'month'))
-        df_calendar['key'] = 1
+        df_calendar['Show Name'] = df_budget['Show Name']
 
 
         # Combine calendar and UTM dataframes
@@ -657,7 +657,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Create lead and purchase calendar dataframes
-        df_final_output = pd.merge(df_base_budget, df_budget['event_date','created_week','created_month'],how='left',left_on=['date','Show Name'],right_on=['created_month','Show Name'])
+        df_final_output = pd.merge(df_base_budget, df_budget['event_date','created_week','created_month']],how='left',left_on=['date','Show Name'],right_on=['created_month','Show Name'])
        
 
 
