@@ -543,7 +543,7 @@ elif sonic_im_client == 'Cerebral':
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',',''))
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
 
@@ -629,7 +629,7 @@ elif sonic_im_client == 'Cerebral':
 
     ### VIEWS: Monthly Calendar View ###
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
-        df_budget['created_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
+        df_budget['created_month'] = df_budget['Broadcast Week'].apply(lambda x: truncate(x,'month'))
         df_budget['created_week'] = df_budget['Broadcast Week'].apply(lambda x: truncate(x,'week'))
         df_budget_grouped = df_budget[df_budget['Actual Drop Day'] <= cutoff_date].groupby(['Show Name','budget_spend_month']).sum()[['Client Rate']].reset_index()
         df_budget.rename({'Actual Drop Day':'event_date'},axis=1,inplace=True)
