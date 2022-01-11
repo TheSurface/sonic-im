@@ -641,7 +641,7 @@ elif sonic_im_client == 'Cerebral':
         df_calendar.rename({0:'date'},inplace=True,axis=1)
         df_calendar.drop(labels='index',axis=1,inplace=True)
         df_calendar['date'] = df_calendar['date'].apply(lambda x: truncate(x,'month'))
-        df_calendar['Show Name'] = df_budget['Show Name']
+        
 
 
         # Combine calendar and UTM dataframes
