@@ -659,7 +659,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Create monthly output file
-        df_output_monthly = (df_final_output)
+        df_output_monthly = (df_base_budget)
 
 
         st.write('')
