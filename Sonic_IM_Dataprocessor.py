@@ -680,7 +680,6 @@ elif sonic_im_client == 'Cerebral':
 		
 elif sonic_im_client == 'Justworks':
 
-
     st.header('Sonic File Processor')
     st.subheader('File Upload')
 
@@ -694,11 +693,6 @@ elif sonic_im_client == 'Justworks':
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
         client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
         client_type = st.selectbox(label='',options=['Leads Only','Orders Only','All'])
-        
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-        
-        df_budget = daily_budget_df
 
         st.write('')
         st.write('')
