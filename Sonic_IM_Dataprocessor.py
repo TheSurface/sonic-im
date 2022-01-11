@@ -680,7 +680,8 @@ elif sonic_im_client == 'Cerebral':
 		
 elif sonic_im_client == 'Justworks':
 
-    st.header('Sonic File Processor')
+
+  st.header('Sonic File Processor')
     st.subheader('File Upload')
 
     st.write('1. Upload the complete budget from Salesforce')
@@ -690,20 +691,14 @@ elif sonic_im_client == 'Justworks':
     st.write('')
     if uploaded_daily_budget is not None:
         st.write('2. Select the client you want to process')
-        
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
-        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
-
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-
-        df_budget = daily_budget_df
-        
-        
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Date'])
         client = st.selectbox(label='',options=daily_budget_df['Account Name: Account Name'].unique())
         client_type = st.selectbox(label='',options=['Leads Only','Orders Only','All'])
+        
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
+        
+        df_budget = daily_budget_df
 
         st.write('')
         st.write('')
