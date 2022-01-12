@@ -627,8 +627,7 @@ elif sonic_im_client == 'Cerebral':
         
         
         # Create the final output file
-        output_df = pd.merge(looker_combined_df,chartable_total_df,on=['Show Name','Host Name','Network','Chartable Tracking','Genre','Median Age','Content Type','Core/Test','Placement','Format','Personally Endorsed','Downloads','Client Rate','Broadcast Week','Actual Drop Day','Percent Male','Percent Female','next_drop_date','Gross Spot Rate 15%','Gross CPM 15%','Date','impressions','reach','estimated_unique_visitors','confirmed_unique_visitors','estimated_leads','estimated_purchases','confirmed_leads','confirmed_purchases','estimated_revenue','confirmed_revenue'],how='inner')
-        
+        output_df = chartable_total_df       
 
     ### VIEWS: Monthly Calendar View ###
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
