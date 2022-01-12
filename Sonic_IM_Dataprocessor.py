@@ -546,10 +546,11 @@ elif sonic_im_client == 'Cerebral':
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
+        
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-        
-        
+        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
+
         daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
         df_budget = daily_budget_df
         
@@ -608,16 +609,10 @@ elif sonic_im_client == 'Cerebral':
             a."Core/Test",  
             DATE(a.next_drop_date) AS next_drop_date,
             DATE(a."Actual Drop Day") AS "Date",
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS chartable_estimated_purchases,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS chartable_confirmed_purchases,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS chartable_estimated_leads,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS chartable_confirmed_leads
             
         FROM rebuilt_budget_df a
             LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
