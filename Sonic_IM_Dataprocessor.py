@@ -617,12 +617,7 @@ elif sonic_im_client == 'Cerebral':
         FROM rebuilt_budget_df a
             LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
-        WHERE 
-            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
-            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-            (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
-            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
-            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
+        
             
         GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
         '''.format(cutoff_date=cutoff_date)
