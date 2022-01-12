@@ -543,17 +543,13 @@ elif sonic_im_client == 'Cerebral':
 
     if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
 
         df_budget = daily_budget_df
         
-
-
-        ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
-        # Create DataFrames from uploaded CSV files
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
 
 
 
