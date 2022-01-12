@@ -573,7 +573,7 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df,date_series_name='Actual Drop Day',show_series_name='Show Name')
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,show_series_name='Show Name')
 
 
         # Aggregate Chartable data
