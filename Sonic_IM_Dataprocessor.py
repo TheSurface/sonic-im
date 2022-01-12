@@ -548,8 +548,8 @@ elif sonic_im_client == 'Cerebral':
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-
+        
+        
         daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
         df_budget = daily_budget_df
         
