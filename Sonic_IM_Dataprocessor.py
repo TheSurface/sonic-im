@@ -543,12 +543,22 @@ elif sonic_im_client == 'Cerebral':
 
     if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
         
+        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
+        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
+        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
+        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
+
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+        df_budget = daily_budget_df
+        
 
         ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
         # Create DataFrames from uploaded CSV files
         
-        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+        
+        
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
@@ -557,6 +567,7 @@ elif sonic_im_client == 'Cerebral':
         # Aggregate purchase and lead data by date and show name
         daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
         daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
+        
         
 
 
@@ -567,7 +578,7 @@ elif sonic_im_client == 'Cerebral':
         # Aggregate Chartable data
         chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum().reset_index()
         
-        df_budget = daily_budget_df
+        
         
 
 
