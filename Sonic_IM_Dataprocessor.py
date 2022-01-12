@@ -539,19 +539,19 @@ elif sonic_im_client == 'Cerebral':
     uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
 
 
+
+
     if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
 
         df_budget = daily_budget_df
         
 
 
-    ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
+        ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
         # Create DataFrames from uploaded CSV files
         daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
 
@@ -564,12 +564,10 @@ elif sonic_im_client == 'Cerebral':
 
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,date_series_name='Actual Drop Day',show_series_name='Show Name')
 
 
-
-
-        # Aggregate Chartable Base File
+        # Aggregate Chartable data
         chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum().reset_index()
 
 
