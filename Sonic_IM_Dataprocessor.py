@@ -597,7 +597,7 @@ elif sonic_im_client == 'Cerebral':
             a."Gross Spot Rate 15%",
             a."Gross CPM 15%",
             a."Core/Test",  
-            a."Estimated purchase",
+            b."Estimated purchase",
             DATE(a.next_drop_date) AS next_drop_date,
             DATE(a."Actual Drop Day") AS "Date",
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
