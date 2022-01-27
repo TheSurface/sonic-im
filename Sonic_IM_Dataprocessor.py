@@ -612,17 +612,15 @@ elif sonic_im_client == 'Cerebral':
             
             
             
-            
-            
         FROM rebuilt_budget_df a
             LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
         WHERE 
-            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date < a.next_drop_date) OR
-            (b.Date >= a.next_drop_date))) OR
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
+            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
             (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
-            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a.next_drop_date) OR 
-            (b.Date <= a.next_drop_date)))
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
+            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
             
             
             
