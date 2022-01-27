@@ -597,7 +597,7 @@ elif sonic_im_client == 'Cerebral':
             a."Gross Spot Rate 15%",
             a."Gross CPM 15%",
             a."Core/Test",  
-            b."Estimated purchase",
+            b."Estimated purchase" AS "estimated_purchase",
             DATE(a.next_drop_date) AS next_drop_date,
             DATE(a."Actual Drop Day") AS "Date",
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
@@ -636,7 +636,7 @@ elif sonic_im_client == 'Cerebral':
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_week'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'week'))
-        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['Show Name','budget_spend_month','Actual Drop Day']).sum()[['Estimated purchase']].reset_index()
+        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['Show Name','budget_spend_month','Actual Drop Day']).sum()[['estimated_purchase']].reset_index()
         df_budget.rename({'Actual Drop Day':'event_date'},axis=1,inplace=True)
 
 
@@ -657,7 +657,7 @@ elif sonic_im_client == 'Cerebral':
         
         # Combine base and budget dataframes
         df_base_budget = pd.merge(df_base, df_budget_grouped, how='left', left_on=['date'], right_on=['budget_spend_month'])
-        df_base_budget['Estimated purchase'].fillna(0,inplace=True)
+        df_base_budget['estimated_purchase'].fillna(0,inplace=True)
 
       
 
