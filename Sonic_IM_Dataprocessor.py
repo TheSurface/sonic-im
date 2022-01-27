@@ -546,7 +546,7 @@ elif sonic_im_client == 'Cerebral':
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-        daily_budget_df['Estimated purchase'] = daily_budget_df['Estimated purchase'].apply(lambda x: float(x))
+        
 
         df_budget = daily_budget_df
         
@@ -636,7 +636,7 @@ elif sonic_im_client == 'Cerebral':
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_week'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'week'))
-        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['Show Name','budget_spend_month','Actual Drop Day']).sum()[['Client Rate','Estimated purchase']].reset_index()
+        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['Show Name','budget_spend_month','Actual Drop Day']).sum()[['Client Rate']].reset_index()
         df_budget.rename({'Actual Drop Day':'event_date'},axis=1,inplace=True)
 
 
