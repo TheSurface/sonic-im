@@ -601,16 +601,16 @@ elif sonic_im_client == 'Cerebral':
             a."Core/Test",  
             DATE(a.next_drop_date) AS next_drop_date,
             DATE(a."Actual Drop Day") AS "Date",
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b.Impressions ELSE 0 END) AS impressions,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b.Reach ELSE 0 END) AS reach,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
-            SUM(CASE WHEN (b.Date <= "{cutoff_date}") THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b.Impressions ELSE 0 END) AS impressions,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b.Reach ELSE 0 END) AS reach,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Confirmed Unique Visitors" ELSE 0 END) AS confirmed_unique_visitors,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) or (b.Date <= "{cutoff_date}") THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
             
             
             
