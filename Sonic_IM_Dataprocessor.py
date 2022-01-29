@@ -620,9 +620,7 @@ elif sonic_im_client == 'Cerebral':
             
         WHERE 
             (a."Actual Drop Day" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
-            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-            (a."Actual Drop Day" <= "{cutoff_date}" AND b.Date IS NULL) OR
-            (a."Actual Drop Day" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
+            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR 
             (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date))) OR
             (b.Date >= a."Actual Drop Day" AND b.Date <= "{cutoff_date}")
             
