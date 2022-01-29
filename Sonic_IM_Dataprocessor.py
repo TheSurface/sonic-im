@@ -542,6 +542,7 @@ elif sonic_im_client == 'Cerebral':
     if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+        
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
@@ -617,11 +618,7 @@ elif sonic_im_client == 'Cerebral':
             LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
         WHERE 
-            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
-            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-            (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
-            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
-            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
+            b.Date < "{cutoff_date}" 
             
             
             
@@ -636,7 +633,7 @@ elif sonic_im_client == 'Cerebral':
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_week'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'week'))
-        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['Show Name','budget_spend_month','Actual Drop Day']).sum()[['Client Rate']].reset_index()
+        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['created_month','created_week','Show Name','budget_spend_month','Actual Drop Day']).sum()[['Client Rate']].reset_index()
         df_budget.rename({'Actual Drop Day':'event_date'},axis=1,inplace=True)
 
 
