@@ -600,6 +600,7 @@ elif sonic_im_client == 'Cerebral':
             a."Gross CPM 15%",
             a."Core/Test",  
             DATE(a.next_drop_date) AS next_drop_date,
+            DATE(a."Actual Drop Day") AS "Date",
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
@@ -613,15 +614,14 @@ elif sonic_im_client == 'Cerebral':
             
             
             
-        FROM chartable_agg_df b
-            LEFT JOIN rebuilt_budget_df a ON b."Ad Campaign Name" = a."Show Name"
-            
-            
+        FROM rebuilt_budget_df a
+            LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
         WHERE 
             (a."Actual Drop Day" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
             (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-            ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
+            (a."Actual Drop Day" <= "{cutoff_date}" AND b.Date IS NULL) OR
+            (a."Actual Drop Day" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
             (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
             
             
