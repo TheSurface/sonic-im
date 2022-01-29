@@ -620,14 +620,14 @@ elif sonic_im_client == 'Cerebral':
             
         WHERE 
             (a."Actual Drop Day" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
-            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR 
-            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date))) OR
+            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) OR 
+            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date) OR
             (b.Date >= a."Actual Drop Day" AND b.Date <= "{cutoff_date}")
             
             
             
             
-        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
         '''.format(cutoff_date=cutoff_date)
 
         chartable_total_df = ps.sqldf(chartable_code,locals())
