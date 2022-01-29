@@ -614,8 +614,8 @@ elif sonic_im_client == 'Cerebral':
             
             
             
-        FROM rebuilt_budget_df a
-            LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
+        FROM chartable_agg_df b
+            LEFT JOIN rebuilt_budget_df a ON b."Ad Campaign Name" = a."Show Name"
             
         WHERE 
             (b.Date <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
