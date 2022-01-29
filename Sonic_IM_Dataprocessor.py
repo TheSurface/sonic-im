@@ -618,7 +618,7 @@ elif sonic_im_client == 'Cerebral':
             LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
         WHERE 
-            b.Date < "{cutoff_date}" 
+            b.Date <= "{cutoff_date}" 
             
             
             
