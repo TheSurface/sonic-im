@@ -489,7 +489,6 @@ elif sonic_im_client == 'Ten Thousand':
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
             
-            
         FROM rebuilt_budget_df a
             LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
             
@@ -540,48 +539,38 @@ elif sonic_im_client == 'Cerebral':
     uploaded_chartable_data = st.file_uploader(label='Chartable Data',accept_multiple_files=False)
 
 
-
-
     if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
-        
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
 
-        
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
 
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
         df_budget = daily_budget_df
         
 
-        ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
-        # Create DataFrames from uploaded CSV files
-        
-        
-        
 
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
+    ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
+        # Create DataFrames from uploaded CSV files
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
+
 
 
         # Aggregate purchase and lead data by date and show name
         daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
         daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
         
-        
 
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df,show_series_name='Show Name')
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,'Actual Drop Day')
 
 
-        # Aggregate Chartable data
+
+
+        # Aggregate Chartable Base File
         chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum().reset_index()
-        
-        
-        
 
 
         # Define Chartable Pandas SQL
@@ -609,7 +598,7 @@ elif sonic_im_client == 'Cerebral':
             a."Gross CPM 15%",
             a."Core/Test",  
             DATE(a.next_drop_date) AS next_drop_date,
-            DATE(b.Date) AS Date,
+            DATE(a."Actual Drop Day") AS "Date",
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
@@ -617,18 +606,19 @@ elif sonic_im_client == 'Cerebral':
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimted_leads,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue,
+            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
             
         FROM rebuilt_budget_df a
             LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
         WHERE 
-            (b."Date" <= "{cutoff_date}")
-            
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
+            (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
+            (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
+            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
             
         GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
         '''.format(cutoff_date=cutoff_date)
@@ -636,8 +626,6 @@ elif sonic_im_client == 'Cerebral':
         chartable_total_df = ps.sqldf(chartable_code,locals())
         
         
-        # Create the final output file
-        output_df = chartable_total_df       
 
     ### VIEWS: Monthly Calendar View ###
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
@@ -684,7 +672,7 @@ elif sonic_im_client == 'Cerebral':
         st.write('')
 
         # Create download link for Performance Summary, Looker vs. Chartable, and Chartable-Looker Combined views file
-        output_csv = output_df.to_csv(index=False)
+        output_csv = chartable_total_df.to_csv(index=False)
         b64 = base64.b64encode(output_csv.encode()).decode()  # some strings <-> bytes conversions necessary here
         output_href = f'<a href="data:file/csv;base64,{b64}" download="output.csv">Download your Output CSV File</a>'
         st.markdown(output_href, unsafe_allow_html=True)
