@@ -542,12 +542,10 @@ elif sonic_im_client == 'Cerebral':
     if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
         daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
         chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
-        
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
         daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-        
 
         df_budget = daily_budget_df
         
@@ -599,8 +597,8 @@ elif sonic_im_client == 'Cerebral':
             a."Gross Spot Rate 15%",
             a."Gross CPM 15%",
             a."Core/Test",  
-            DATE(a.next_drop_date) AS next_drop_date,
-            b.Date,
+            DATE(a.Date) AS next_drop_date,
+            DATE(b.Date) AS "Date",
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
@@ -612,16 +610,15 @@ elif sonic_im_client == 'Cerebral':
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
             
-            
-            
-        FROM chartable_agg_df b
-            LEFT JOIN rebuilt_budget_df a ON b."Ad Campaign Name" = a."Show Name"
+        FROM rebuilt_budget_df a
+            LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
             
         WHERE 
-            (b.Date <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
             (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
-            (b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
-            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)
+            (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
+            (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
+            (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
             
             
             
@@ -636,7 +633,7 @@ elif sonic_im_client == 'Cerebral':
         df_budget['budget_spend_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_month'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'month'))
         df_budget['created_week'] = df_budget['Actual Drop Day'].apply(lambda x: truncate(x,'week'))
-        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['created_month','created_week','Show Name','budget_spend_month','Actual Drop Day']).sum()[['Client Rate']].reset_index()
+        df_budget_grouped = df_budget[df_budget['Broadcast Week'] <= cutoff_date].groupby(['Show Name','budget_spend_month','Actual Drop Day']).sum()[['Client Rate']].reset_index()
         df_budget.rename({'Actual Drop Day':'event_date'},axis=1,inplace=True)
 
 
