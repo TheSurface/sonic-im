@@ -489,7 +489,6 @@ elif sonic_im_client == 'Ten Thousand':
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
             SUM(CASE WHEN (b.Date >= a.Date AND b.Date < a.next_drop_date) OR (a.Date = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue
             
-            
         FROM rebuilt_budget_df a
             LEFT JOIN chartable_agg_df b ON a."Podcast/Station: Account Name" = b."Ad Campaign Name"
             
@@ -544,23 +543,12 @@ elif sonic_im_client == 'Cerebral':
 
     if (uploaded_daily_budget is not None) and (uploaded_chartable_data is not None):
         
-        daily_budget_df = pd.read_csv(uploaded_daily_budget,parse_dates=['Broadcast Week','Actual Drop Day'])
-        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
-
-        
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
-        daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
-        daily_budget_df['Broadcast Week'] = daily_budget_df['Broadcast Week'].apply(lambda x: x.date())
-
-        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
-        df_budget = daily_budget_df
-        
 
         ### VIEWS: Performance Summary, Chartable vs. Looker, Chartable-Looker Combined by Show ###
         # Create DataFrames from uploaded CSV files
         
-        
-        
+        chartable_df = pd.read_csv(uploaded_chartable_data, parse_dates=['Date'])
+        daily_budget_df = daily_budget_df.sort_values(by=['Show Name','Actual Drop Day'])
 
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: str(x).replace('$','').replace(',','').replace(')','').replace('(','-'))
         daily_budget_df['Client Rate'] = daily_budget_df['Client Rate'].apply(lambda x: float(x))
@@ -570,17 +558,16 @@ elif sonic_im_client == 'Cerebral':
         daily_budget_df['Percent Male'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[0].split(' ')[1])/100)
         daily_budget_df['Percent Female'] = daily_budget_df['% M/F'].apply(lambda x: int(x.split('/')[1].split(' ')[2])/100)
         
-        
 
 
         # Rebuild budget
-        rebuilt_budget_df = rebuild_budget(daily_budget_df,show_series_name='Show Name')
+        rebuilt_budget_df = rebuild_budget(daily_budget_df,date_series_name='Actual Drop Day',show_series_name='Show Name')
 
 
         # Aggregate Chartable data
         chartable_agg_df = chartable_df.groupby(['Date','Ad Campaign Name']).sum().reset_index()
         
-        
+        df_budget = daily_budget_df
         
 
 
@@ -609,6 +596,7 @@ elif sonic_im_client == 'Cerebral':
             a."Gross CPM 15%",
             a."Core/Test",  
             DATE(a.next_drop_date) AS next_drop_date,
+            DATE(a."Actual Drop Day") AS "Date",
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Impressions ELSE 0 END) AS impressions,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b.Reach ELSE 0 END) AS reach,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Unique Visitors" ELSE 0 END) AS estimated_unique_visitors,
@@ -617,19 +605,18 @@ elif sonic_im_client == 'Cerebral':
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated Revenue" ELSE 0 END) AS estimated_revenue,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed Revenue" ELSE 0 END) AS confirmed_revenue,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated purchase" ELSE 0 END) AS estimated_purchases,
-            SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed purchase" ELSE 0 END) AS confirmed_purchases,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Estimated lead" ELSE 0 END) AS estimated_leads,
             SUM(CASE WHEN (b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date) THEN b."Confirmed lead" ELSE 0 END) AS confirmed_leads
             
         FROM rebuilt_budget_df a
+            LEFT JOIN chartable_agg_df b ON a."Show Name" = b."Ad Campaign Name"
+            
+        WHERE 
             (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date < a.next_drop_date) OR
             (a."Actual Drop Day" = a.next_drop_date AND b.Date >= a.next_drop_date))) OR
             (a."Broadcast Week" <= "{cutoff_date}" AND b.Date IS NULL) OR
             (a."Broadcast Week" <= "{cutoff_date}" AND ((b.Date >= a."Actual Drop Day" AND b.Date >= a.next_drop_date) OR 
             (b.Date <= a."Actual Drop Day" AND b.Date <= a.next_drop_date)))
-            
-   
             
         GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
         '''.format(cutoff_date=cutoff_date)
